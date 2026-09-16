@@ -22,7 +22,3 @@ void carta_imprimir(Carta c){
     printf("%s %s", valor_texto(c.valor), naipe_texto(c.naipe));
     
 }
-
-Valor manilha_da_vira(Carta vira);
-
-manilha_da_v(11 + 1) % 12 = 0
