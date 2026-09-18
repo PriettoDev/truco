@@ -5,6 +5,7 @@
 
 #define MAX_CARTAS 40
 
+//representa o baralho e controla a carta disponível no topo
 typedef struct {
     Carta cartas[MAX_CARTAS];
     int topo;
