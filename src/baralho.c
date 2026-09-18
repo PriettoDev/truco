@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include "baralho.h"
 
+//inicializa o baralho sem cartas disponíveis
 void inicializaBaralho(Baralho *b) {
     b->topo = -1;
 }
 
+//cria as 40 cartas do baralho a partir dos naipes e valores
 void criaBaralho(Baralho *b) {
     int posicao = 0;
 
@@ -21,6 +23,7 @@ void criaBaralho(Baralho *b) {
     b->topo = MAX_CARTAS - 1;
 }
 
+//verifica se não existem mais cartas disponíveis no baralho
 int baralhoVazio(Baralho *b) {
     if (b->topo == -1)
         return 1;
@@ -28,6 +31,7 @@ int baralhoVazio(Baralho *b) {
     return 0;
 }
 
+//retira uma carta do topo do baralho
 int retiraCarta(Baralho *b, Carta *c) {
     if (baralhoVazio(b))
         return 0;
@@ -38,6 +42,7 @@ int retiraCarta(Baralho *b, Carta *c) {
     return 1;
 }
 
+//exibe as cartas disponíveis, começando pelo topo
 void imprimeBaralho(Baralho b) {
     for (int i = b.topo; i >= 0; i--) {
         carta_imprimir(b.cartas[i]);
