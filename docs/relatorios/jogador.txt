@@ -1,0 +1,5 @@
+Para a criação do arquivo com as esturtura de jogador utilizei dois vetores, um para armazenar o nome do jogador, e outro vetor que irá armazenar as cartas do jogador (de tamaho maximo 3 e que vai diminuindo durante o jogo). Além disso criei a variavel dupla (na minha cabeça o valor poderia ser 1 ou 2, teriamos que informar o jogador para escolher uma das duas, assim formariamos as duplas) e também criei uma variavel para a quantidade de cartas na mão do jogador durante o jogo, esse valor vai diminuindo com o jogo.
+
+Já no arquivo com as funções de jogador eu criei três funções para o jogador, a função criar jogador, onde crio a variavel jogador do tipo Jogador(a struct), dentro dessa função uso uma strcpy para atribuir o nome a esse jogador (usei a função strcpy(), pois nome é um vetor e não posso usar um =), e para as variaveis dupla e quantidade de cartas eu atribui os valores iniciais.
+
+Criei o arquivo de teste do modulo de jogador, utilizando também as funcionalidades de carta.h onde pude testar as funções de jogador. Ao mesmo tempo encontrei problemas no terminal que pude resolver, corrigindo aspectos simples das funções (como a falta de \n por exemplo).
