@@ -32,18 +32,18 @@ int baralhoVazio(Baralho *b) {
 }
 
 //retira uma carta do topo do baralho
-int retiraCarta(Baralho *b, Carta *c) {
-    if (baralhoVazio(b))
+int retiraCarta(Baralho *b, Carta *c) { //vai alterar o topo e entrega pra quem chamou qual carta foi retirada
+    if (baralhoVazio(b)) //se não existe carta não acessa o vetor
         return 0;
 
-    *c = b->cartas[b->topo];
-    b->topo--;
+    *c = b->cartas[b->topo]; //pegar as cartas (39) 
+    b->topo--; // passa para o próximo (diminui o topo)
 
     return 1;
 }
 
 //exibe as cartas disponíveis, começando pelo topo
-void imprimeBaralho(Baralho b) {
+void imprimeBaralho(Baralho b) { //a função só consulta o baralho para imprimir, ela não precisa modificar o original, baralho por valor
     for (int i = b.topo; i >= 0; i--) {
         carta_imprimir(b.cartas[i]);
         printf("\n");
