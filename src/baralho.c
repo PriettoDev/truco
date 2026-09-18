@@ -25,7 +25,7 @@ void criaBaralho(Baralho *b) {
 
 //verifica se não existem mais cartas disponíveis no baralho
 int baralhoVazio(Baralho *b) {
-    if (b->topo == -1)
+    if (b->topo == -1) //se o topo for -1, não existe nenhuma posição com carta disponível
         return 1;
 
     return 0;
