@@ -10,8 +10,8 @@ void inicializaBaralho(Baralho *b) {
 void criaBaralho(Baralho *b) {
     int posicao = 0;
 
-    for (int n = OUROS; n <= PAUS; n++) {
-        for (int v = QUATRO; v <= TRES; v++) {
+    for (int n = OUROS; n <= PAUS; n++) { //percorre os 4 naipes
+        for (int v = QUATRO; v <= TRES; v++) { //percorre os 10 valores
 
             b->cartas[posicao].naipe = n;
             b->cartas[posicao].valor = v;
