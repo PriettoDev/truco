@@ -13,6 +13,7 @@ typedef struct {
 
 void inicializaBaralho(Baralho *b);
 void criaBaralho(Baralho *b);
+void embaralhaBaralho(Baralho *b);
 int baralhoVazio(Baralho *b);
 int retiraCarta(Baralho *b, Carta *c);
 void imprimeBaralho(Baralho b);
