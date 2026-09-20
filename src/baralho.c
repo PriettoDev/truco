@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "baralho.h"
 
 //inicializa o baralho sem cartas disponíveis
@@ -21,6 +22,20 @@ void criaBaralho(Baralho *b) {
     }
 
     b->topo = MAX_CARTAS - 1;
+}
+
+//embaralha as cartas trocando suas posições no vetor
+void embaralhaBaralho(Baralho *b) {
+    Carta aux;
+    int posicao;
+
+    for (int i = b->topo; i > 0; i--) {
+        posicao = rand() % (i + 1);
+
+        aux = b->cartas[i];
+        b->cartas[i] = b->cartas[posicao];
+        b->cartas[posicao] = aux;
+    }
 }
 
 //verifica se não existem mais cartas disponíveis no baralho
