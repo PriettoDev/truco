@@ -15,6 +15,7 @@ typedef struct {
 typedef struct {
     Jogador jogadores[4];
     Ordem ordem;
+    Carta vira; //Mesa guarda a carta virada da rodada
 } Mesa;
 
 void inicializarMesa(Ordem *o);
