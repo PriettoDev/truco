@@ -1,0 +1,31 @@
+Parte desenvolvida por Lucas Diniz:
+
+Sobre a minha parte na biblioteca de mesa (mesa.h e mesa.c), eu comecei definindo
+a estrutura de dados que gerencia a fila circular de jogadas e os componentes da
+partida. Defini a constante MAX_JOGADOR como 5 (sendo 4 jogadores mais 1
+posição sempre vazia para controle da fila circular), estruturei o tipo Ordem com o
+vetor de posições e os ponteiros de início (ini) e fim (fim), e criei a Mesa para
+guardar o vetor de jogadores, a ordem atual da partida e a carta virada da rodada
+(vira). Por fim, declarei todas as funções de manipulação de ordem na biblioteca
+mesa.h.
+Em seguida, no arquivo mesa.c, criei a função auxiliar proximaPosicao. Marquei ela
+como static pois se trata de um detalhe interno da fila circular e não precisa ser
+chamada fora deste arquivo. Ela é responsável por avançar uma posição na fila e
+retornar para o início (0) quando atinge o limite do vetor. A partir dela, implementei
+as operações fundamentais da estrutura de dados: inicializarMesa (que ajusta os
+ponteiros de início e fim), mesaVazia e mesaCheia (para validação de limites),
+inserirMesa (para enfileirar os índices dos jogadores), removerMesa (para
+desenfileirar de forma segura) e tamanhoMesa (que calcula o número atual de
+jogadores no ciclo).
+Após construir a base da fila circular, criei a função girarMesa(Ordem *o) para
+simular a mudança de turno do Truco. Ela funciona removendo o jogador que era o
+"mão" (o primeiro da fila) através do removerMesa e inserindo-o imediatamente no
+final com o inserirMesa, fazendo com que o próximo jogador assuma a rodada.
+Chegando à parte final da biblioteca, desenvolvi a função
+imprimirOrdemDaMao(Mesa mesa). Cabe destacar que unifiquei o código aqui: em
+vez de ter três funções separadas para a primeira, segunda e terceira mão, juntei
+toda a lógica nessa única função genérica, o que deixou o código muito mais enxuto
+e fácil de manter. Ela recebe a estrutura Mesa por valor (criando uma cópia
+proposital da ordem), permitindo que o laço while (!mesaVazia(&mesa.ordem))
+desenfileire e imprima os nomes e duplas dos jogadores na tela sem alterar a ordem
+real e permanente da mesa durante o jogo.

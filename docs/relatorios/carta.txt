@@ -1,0 +1,55 @@
+Parte desenvolvida por Breno:
+
+Sobre a minha parte na biblioteca de cartas (carta.h e carta.c), eu comecei definindo
+as enumerações para representar os tipos de dados fundamentais do jogo. Criei o
+enum Naipe respeitando a ordem estrita de desempate de manilhas do Truco
+(OUROS, ESPADAS, COPAS e PAUS), e o enum Valor para representar a ordem de
+força crescente das cartas (de QUATRO até TRES). Essa ordem não é estética:
+como o compilador numera os itens do enum a partir de zero, ela passa a ser a
+própria regra do jogo escrita em código. Em seguida, montei a estrutura Carta
+(contendo os campos naipe e valor) e declarei os protótipos das funções auxiliares
+na biblioteca carta.h.
+Em seguida, no arquivo carta.c, implementei a lógica de conversão visual utilizando
+vetores estáticos de strings (nome_naipe e nome_valor) para mapear os códigos
+para seus respectivos símbolos (♦, ♠, ♥, ♣) e caracteres ("4" a "3"). Vale ressaltar
+que, dependendo do sistema operacional ou da codificação do terminal (como
+UTF-8 versus CP-850 no Windows), o compilador ou o console podem não
+reconhecer esses símbolos gráficos dos naipes diretamente e acabar exibindo
+outros caracteres no lugar; por isso, a estrutura foi isolada nessa função para facilitar
+eventuais adaptações de codificação. Para evitar acessos indevidos à memória, criei
+as funções naipe_texto e valor_texto validando se os valores informados estão
+dentro dos limites permitidos dos enums; se estiverem fora da faixa, retornam "?",
+caso contrário, retornam o texto correspondente.
+Após definir a conversão dos textos, criei a função carta_imprimir(Carta c). Ela utiliza
+o printf para exibir a carta no terminal no formato visual Valor Naipe (por exemplo, Q
+♠), facilitando a visualização por parte dos jogadores durante as jogadas. Optei por
+não incluir quebra de linha dentro dela, deixando que quem chama decida o layout,
+de modo que a mão inteira de um jogador possa ser exibida em uma única linha.
+Chegando à parte das regras, desenvolvi a função manilha_da_vira(Carta vira),
+responsável pela definição da manilha da rodada. Através da expressão matemática
+(vira.valor + 1) % NUM_VALORES, o código pega o valor numérico da carta virada
+na mesa, avança uma posição na hierarquia e aplica o operador de resto. Isso
+garante que a sequência lógica do Truco funcione corretamente, inclusive fazendo o
+ciclo retornar do "3" (índice 9) de volta para o "4" (índice 0). A função retorna um
+Valor e não uma Carta, porque assim que um valor vira manilha as quatro cartas
+daquele valor passam a ser manilha, e escolher um naipe aqui seria um erro de
+regra.
+Complementando, escrevi a função carta_eh_manilha(Carta c, Valor manilha), que
+retorna 1 quando o valor da carta coincide com o da manilha e 0 quando não
+coincide. Como apenas o valor é comparado, o resultado vale para os quatro naipes
+daquele valor.
+Desenvolvi também a função carta_forca(Carta c, Valor manilha), que é onde a regra
+de força vira um número único, para que comparar duas cartas seja comparar dois
+inteiros. Para cartas comuns, a força é o próprio valor do enum (0 a 9), já que a
+ordem 4 < 5 < 6 < 7 < Q < J < K < A < 2 < 3 está embutida na numeração. Para
+manilhas, a força é NUM_VALORES + naipe, resultando em 10 a 13. A soma de
+NUM_VALORES não é arbitrária: como a maior carta comum vale 9, ela garante que
+até a manilha mais fraca passe por cima de qualquer carta comum, enquanto a
+soma do naipe resolve o desempate entre manilhas seguindo a ordem do enum
+Naipe.
+Por último, implementei a função carta_comparar(Carta a, Carta b, Valor manilha),
+que registra a força de cada carta em duas variáveis locais e devolve 1 quando a
+primeira vence, -1 quando a segunda vence e 0 quando há empate. Esse retorno de
+três estados existe porque comparar cartas no Truco tem três resultados possíveis, e
+centralizar isso em uma função garante que o empate, que altera o resultado da
+mão, seja tratado da mesma forma em todo o projeto.

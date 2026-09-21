@@ -1,5 +1,34 @@
+Parte desenvolvida por Pedro Prietto
+
 Para a criação do arquivo com as esturtura de jogador utilizei dois vetores, um para armazenar o nome do jogador, e outro vetor que irá armazenar as cartas do jogador (de tamaho maximo 3 e que vai diminuindo durante o jogo). Além disso criei a variavel dupla (na minha cabeça o valor poderia ser 1 ou 2, teriamos que informar o jogador para escolher uma das duas, assim formariamos as duplas) e também criei uma variavel para a quantidade de cartas na mão do jogador durante o jogo, esse valor vai diminuindo com o jogo.
 
 Já no arquivo com as funções de jogador eu criei três funções para o jogador, a função criar jogador, onde crio a variavel jogador do tipo Jogador(a struct), dentro dessa função uso uma strcpy para atribuir o nome a esse jogador (usei a função strcpy(), pois nome é um vetor e não posso usar um =), e para as variaveis dupla e quantidade de cartas eu atribui os valores iniciais.
 
 Criei o arquivo de teste do modulo de jogador, utilizando também as funcionalidades de carta.h onde pude testar as funções de jogador. Ao mesmo tempo encontrei problemas no terminal que pude resolver, corrigindo aspectos simples das funções (como a falta de \n por exemplo).
+
+Anotações parte 2:
+    Comecei criando a estrutura do Jogador, utilizando dois vetores, um armazenando
+    uma string de até 30 chars para guardar o nome e um outro vetor de tamanho 3,
+    para armazenar as três cartas dos jogadores utilizadas no Truco e duas variáveis
+    uma chamada de qtdCartas e a outra chamada de dupla, a primeira é responsável
+    por indicar a quantidade de cartas na mão do jogador e a segunda é para indicar
+    qual a dupla do jogador (dupla 1 ou dupla 2). Para fazer está biblioteca, utilizei a
+    estrutura carta que já havia sido criada anteriormente no módulo carta.h, evitando
+    possíveis conflitos de merge.
+    No arquivo source (carta.c) eu criei três funções, uma função chamada
+    jogador_criar() do tipo Jogador que recebe dois parâmetros, o vetor nome (um
+    ponteiro para onde começa o vetor e daí escrever no vetor original) e a variável
+    dupla, pois assim a função vai usa-los para criar o jogador. Nessa função ela cria
+    uma variável chamada novoJogador do tipo Jogador, para escrever o nome do
+    novoJogador nos moldes da struct tive que usar a função “strcpy()” pois só assim
+    poderia copiar o conteúdo de uma string para dentro do vetor da struct.
+    Também criei a função como tipo de retorno void porque a função não precisa
+    devolver nada ela já altera o jogador original diretamente através do ponteiro. Com o
+    nome jogador_distribuir_cartas(Jogador *j, Carta c1, Carta c2, Carta c3) que recebe
+    como parâmetros um ponteiro para a variável do tipo Jogador que já existe, fazendo
+    as alterações diretamente nele sem precisar devolver uma cópia, e recebe também
+    como parâmetro três variáveis do tipo Carta. Dentro da função usei o operador “->”
+    pois j é um ponteiro com o endereço de memória da struct Jogador.
+    E por fim criei a função “void jogador_imprimir(Jogador *j)” onde j (um ponteiro)
+    aponta para o endereço de memória e pega o campo mao[i] e dentro desse vetor
+    pega o valor armazenado por i.
