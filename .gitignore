@@ -54,5 +54,13 @@ dkms.conf
 # debug information files
 *.dwo
 
-
 .DS_Store
+*.DS_Store
+
+# Configuracoes de IDE
+.vscode/
+*.vscode/
+
+# Pasta de saida de compilacao (executaveis gerados)
+output/
+*output/
