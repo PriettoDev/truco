@@ -1,0 +1,31 @@
+Parte desenvolvida por Emmanuele:
+
+Comecei criando a estrutura do Baralho, utilizando um vetor com capacidade para
+armazenar as 40 cartas utilizadas no Truco e uma variável chamada topo,
+responsável por indicar qual é a última carta disponível no baralho. Para isso, utilizei
+a estrutura carta que já havia sido criada anteriormente no módulo carta.h, evitando
+criar novamente os valores e naipes dentro do Baralho.
+Inicialmente, com a função inicializaBaralho(), defini o valor do topo como -1,
+representando que naquele momento ainda não existem cartas disponíveis no
+baralho. Em seguida, na função criaBaralho(), utilizei dois laços for: o primeiro
+percorre os 4 naipes e o segundo percorre os 10 valores definidos no módulo Carta.
+A combinação desses valores permite preencher as 40 posições do vetor cartas. Ao
+finalizar a criação, o topo recebe o valor 39, correspondente à última posição válida
+do vetor.
+Após a criação das cartas, implementei a função embaralhaBaralho(), responsável
+por alterar a posição das cartas dentro do vetor. Para isso, o código percorre o
+baralho a partir do topo e utiliza rand() para selecionar uma posição. A carta da
+posição atual é então trocada com a carta da posição sorteada, utilizando uma
+variável auxiliar do tipo Carta para realizar a troca sem perder nenhuma informação.
+Para que a sequência gerada por rand() possa variar entre as execuções do
+programa, foi utilizado srand(time(NULL)), inicializado uma única vez no início do
+programa.
+Também criei a função baralhoVazio(), que verifica o valor do topo. Quando o topo
+chega a -1, a função retorna 1, indicando que não existem mais cartas disponíveis;
+caso contrário, retorna 0.
+Por fim, implementei a função retiraCarta(), responsável por retirar somente a carta
+localizada no topo do baralho. A carta é armazenada na variável recebida pela
+função e, após a retirada, o topo é decrementado em uma posição. Por exemplo,
+inicialmente o topo está na posição 39 e, após a primeira retirada, passa para 38.
+Dessa forma, não é necessário apagar ou deslocar as cartas do vetor, pois o próprio
+topo controla quais cartas ainda estão disponíveis.

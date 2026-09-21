@@ -1,0 +1,19 @@
+Organização e Reuniões da equipe
+    A organização da equipe teve início no dia 24 de agosto, em uma reunião online
+    focada na apresentação do projeto do jogo Truco, contextualizando suas regras e
+    dinâmica de funcionamento. Na mesma ocasião, definiu-se a metodologia de
+    trabalho no formato híbrido, em que cada integrante assume responsabilidades
+    específicas, mas mantendo a colaboração mútua contínua. Para encerrar o encontro
+    inicial, deu-se a estruturação preliminar do repositório no GitHub.
+    No dia seguinte, 25 de agosto, a equipe realizou um encontro presencial voltado ao
+    alinhamento técnico e suporte aos membros para a instalação e utilização prática do
+    GitHub, além do levantamento de propostas para a estrutura do projeto. Dando
+    sequência às atividades, a terceira reunião ocorreu de forma online no dia 3 de
+    setembro para acompanhar o progresso das tarefas, trazendo a apresentação das
+    primeiras implementações em código das cartas e do jogador, além de abrir a
+    discussão sobre o design e a interface gráfica a ser utilizada.
+    Por fim, no dia 17 de setembro, realizou-se a quarta reunião online para revisar os
+    códigos desenvolvidos para o baralho e para a mesa. O encontro também foi
+    essencial para organizar a estratégia de apresentação e planejar a explicação
+    detalhada de todo o progresso alcançado até então para a discussão durante a aula
+    de sexta-feira, dia 18 de setembro.

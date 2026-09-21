@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "baralho.h"
+#include "../src/baralho.h"
 
 int main(void) {
 

@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "jogador.h"
+#include "../src/jogador.h"
 
 int main(){
     char nomeOrigem[30] = "Pedro";

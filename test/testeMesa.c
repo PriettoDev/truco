@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "mesa.h"
+#include "../src/mesa.h"
 
 int main(void) {
     Mesa mesa;

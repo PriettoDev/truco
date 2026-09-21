@@ -1,0 +1,8 @@
+Introdução
+    Este projeto tem como objetivo desenvolver um jogo de Truco Paulista em
+    linguagem C, aplicando conceitos fundamentais de algoritmos e estruturas de dados.
+    Nesta primeira etapa, foram desenvolvidas as estruturas iniciais necessárias para o
+    funcionamento do jogo, incluindo a representação das cartas e jogadores, criação e
+    embaralhamento do baralho, organização das duplas, distribuição das cartas e
+    controle da ordem dos jogadores na mesa. Essas implementações constituem a
+    base para o desenvolvimento das próximas etapas do sistema.
