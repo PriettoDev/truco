@@ -1,0 +1,27 @@
+Divisão de Responsabilidades
+    A equipe adotou um método de organização por etapas, onde cada integrante ficou
+    responsável por um módulo e por determinadas funcionalidades para o jogo Truco
+    ficar completo e funcional. Essa divisão é apenas de cunho organizacional, porque
+    os integrantes estão se ajudando e dando suporte à estrutura do código, quando
+    necessário. A divisão de responsabilidades e as contribuições individuais para a
+    conclusão desta etapa estruturam-se da seguinte forma:
+    
+        ● Breno: Responsável pela modelagem do módulo de Carta, abrangendo a
+        definição de naipes, valores, cálculo de força das cartas e a lógica de
+        determinação da manilha;
+
+        ● Pedro: Responsável pelo desenvolvimento do módulo de Jogador,
+        estruturando os atributos individuais (nome e cartas) e a associação dos
+        participantes em suas respectivas duplas;
+
+        ● Emmanuelle: Responsável pela implementação da biblioteca do Baralho,
+        com a criação das 40 cartas, o algoritmo de embaralhamento e a regra de
+        retirada de cartas exclusivamente pelo topo;
+
+        ● Lucas: Responsável pela mecânica da Roda e Mesa, organizando a ordem
+        de jogada dos integrantes, o alinhamento alternado das duplas e o controle
+        da rotação do jogador "mão";
+
+        ● João Henrique: Responsável pela estruturação e integração geral dos
+        módulos do sistema, contribuindo também na elaboração da documentação e
+        dos relatórios do projeto.

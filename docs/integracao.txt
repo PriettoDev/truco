@@ -1,0 +1,32 @@
+Parte desenvolvida por João:
+
+Sobre a minha parte no fluxo principal, eu comecei mostrando a ordem que deve ser
+seguida na hora do cadastro, garantindo que os jogadores saibam em qual dupla
+cada um será inserido.
+Em seguida, faço o cadastro dos 4 participantes do jogo dentro de um laço ‘for’ que
+varia de 0 a 3 (i < 4). Em cada iteração, calculo a dupla do jogador através da
+expressão ternária int dupla = (i % 2 == 0) ? 1 : 2; (definindo intercaladamente Dupla
+1 para os índices pares e Dupla 2 para os ímpares) e solicito o nome via teclado
+com o scanf(" %[^\n]", nomeDigitado);. Armazeno o nome e a dupla criando o objeto
+através da função jogador_criar(nomeDigitado, dupla) da biblioteca jogador.h e
+adiciono o jogador na mesa com a função inserirMesa(&mesa.ordem, i);.
+Após realizar o cadastro, venho para a próxima etapa onde apresento a confirmação
+dos jogadores na tela. Utilizo outro laço ‘for’ de 0 a 3 com printf para listar a posição
+e confirmar para os jogadores quem faz parte de qual dupla, acessando os dados
+com mesa.jogadores[i].nome e mesa.jogadores[i].dupla.
+Na sequência, o código faz a revelação do Vira retendo uma carta do baralho
+(retiraCarta) e calcula a manilha da rodada (calcular_manilha), imprimindo as
+informações do Vira e da Manilha na tela.
+Dando continuidade ao fluxo, realizamos a distribuição das cartas aos jogadores.
+Dentro de um laço for de 0 a 3, retiro 3 cartas do baralho (c1, c2, c3) e as atribuo à
+mão de cada jogador utilizando a função
+jogador_distribuir_cartas(&mesa.jogadores[i], c1, c2, c3);. Logo em seguida, exibe
+na tela as cartas guardadas de cada um chamando
+jogador_imprimir(&mesa.jogadores[i]);.
+Chegando à parte final do código, é apresentada a dinâmica de ordem de jogada na
+mesa através da função imprimirOrdemDaMao(mesa);. Em seguida, para simular a
+mudança de turno do jogo quando a "Mão" encerra a jogada, utilizo a função
+girarMesa(&mesa.ordem);, que envia o primeiro jogador para o fim da fila da roda, e
+chamo novamente imprimirOrdemDaMao(mesa); para mostrar a nova sequência
+atualizada. Todas essas instruções de gerenciamento da mesa e das mãos são
+providas pelas bibliotecas mesa.c e mesa.h.

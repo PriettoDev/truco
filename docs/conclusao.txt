@@ -1,0 +1,6 @@
+Conclusão
+    Em suma, a equipe desenvolveu os requisitos previstos para a 1ª Unidade do
+    projeto, consolidando a estrutura base e a lógica inicial do jogo de Truco. O
+    progresso obtido é fruto do trabalho colaborativo e engajado de todos os
+    componentes, que mantiveram participação ativa ao longo de todo o
+    desenvolvimento e prestaram suporte mútuo para a execução das entregas.
