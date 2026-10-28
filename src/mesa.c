@@ -24,25 +24,25 @@ int mesaCheia(Ordem *o) {
     }
     return 0;
 }
-
-int inserirMesa(Ordem *o, int indiceJogador) {
-    if (mesaCheia(o)) {
+//AJUSTAR
+int inserirMesa(Ordem *o, Jogador *jogador) {
+    if (mesaCheia(o) || jogador == NULL) {
         return 0;
     }
     o->fim = proximaPosicao(o->fim);
-    o->posicoes[o->fim] = indiceJogador;
+    o->posicoes[o->fim] = jogador;
     return 1;
 }
 
-int removerMesa(Ordem *o, int *indiceJogador) {
-    if (mesaVazia(o)) {
+int removerMesa(Ordem *o, Jogador **jogador) {
+    if (mesaVazia(o) || jogador == NULL) {
         return 0;
     }
     o->ini = proximaPosicao(o->ini);
-    *indiceJogador = o->posicoes[o->ini];
+    *jogador = o->posicoes[o->ini];
     return 1;
 }
-
+//AJUSTAR
 int tamanhoMesa(Ordem *o) {
     if (mesaVazia(o)) {
         return 0;
@@ -55,19 +55,20 @@ int tamanhoMesa(Ordem *o) {
 
 // gira a ordem de jogo: quem era "mao" vai para o fim, e o proximo jogador assume
 void girarMesa(Ordem *o) {
-    int indiceRemovido;
-    removerMesa(o, &indiceRemovido);
-    inserirMesa(o, indiceRemovido);
+    Jogador *jogador;
+    if (removerMesa(o, &jogador)){
+        inserirMesa(o, jogador);
+    }
 }
 
 // mostra a ordem de jogo desta mao. Recebe a Mesa POR VALOR de proposito:
 // consome uma COPIA da ordem para percorrer, sem alterar a ordem real da mesa
-void imprimirOrdemDaMao(Mesa mesa) {
-    int indice;
+void imprimirOrdemDaMao(const Mesa *mesa) {
+    Ordem copia = mesa->ordem;
+    Jogador *jogador;
     printf("\nOrdem de jogo desta mao:\n");
-    while (!mesaVazia(&mesa.ordem)) {
-        removerMesa(&mesa.ordem, &indice);
-        printf("Jogador: %s (Dupla %d)\n", mesa.jogadores[indice].nome, mesa.jogadores[indice].dupla);
+    while (removerMesa(&copia, &jogador)) {
+        printf("Jogador: %s (Dupla %d)\n", jogador->nome, jogador->dupla);
     }
 }
 //as três funções que tinha antes "PrimeiraMao,SegundaMao e TerceiraMao" eu unifiquei tudo aqui em imprimirOrdemDaMao, como as três faziam a mesma coisa botei tudo em uma só funçãogenerica chamada 3 vezes facilita o trabalho e deixa mais enxuto o codigo

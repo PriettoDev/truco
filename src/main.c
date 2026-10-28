@@ -42,7 +42,10 @@ int main(){
 
         // Cria e guarda o jogador usando a funcao da biblioteca jogador.h
         mesa.jogadores[i] = jogador_criar(nomeDigitado, dupla);
-        inserirMesa(&mesa.ordem, i);
+        if (!inserirMesa(&mesa.ordem, &mesa.jogadores[i])) {
+            printf("Erro ao enfileirar jogador!\n");
+            return 1;
+        }
     }
 
     printf("\n--- JOGADORES NA MESA ---\n");
@@ -75,13 +78,13 @@ int main(){
     printf("\nMANILHA DA RODA: %s\n", valor_texto(valorManilha));
 
     //Ordem dos jogadores da mesa
-    imprimirOrdemDaMao(mesa);
+    imprimirOrdemDaMao(&mesa);
 
     printf("\n\n    CONFIGURACAO DOS JOGADORES NA MESA  ");
     girarMesa(&mesa.ordem);
     printf("\nO 'Mao' acabou de jogar e foi enviado para o fim da roda!\n");
 
-    imprimirOrdemDaMao(mesa);
+    imprimirOrdemDaMao(&mesa);
 
     printf("\nDISTRIBUICAO E CONEXAO DE ESTRUTURAS CONCLUIDA!  \n");
     return 0;
