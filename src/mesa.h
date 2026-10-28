@@ -6,10 +6,12 @@
 #define MAX_JOGADOR 5   // 4 jogadores + 1 posicao sempre vazia (fila circular)
 
 // Fila circular que guarda a ordem de jogo: os indices, na ordem em que jogam
+//AJUSTAR
 typedef struct {
-    int posicoes[MAX_JOGADOR];
+    Jogador *posicoes[MAX_JOGADOR];
     int ini, fim;
 } Ordem;
+//AJUSTAR
 
 // Representa a mesa: os 4 jogadores sentados e a ordem de jogo atual
 typedef struct {
@@ -21,10 +23,10 @@ typedef struct {
 void inicializarMesa(Ordem *o);
 int mesaVazia(Ordem *o);
 int mesaCheia(Ordem *o);
-int inserirMesa(Ordem *o, int indiceJogador);
-int removerMesa(Ordem *o, int *indiceJogador);
+int inserirMesa(Ordem *o, Jogador *jogador);
+int removerMesa(Ordem *o, Jogador **jogador);
 int tamanhoMesa(Ordem *o);
 void girarMesa(Ordem *o);
-void imprimirOrdemDaMao(Mesa mesa);
+void imprimirOrdemDaMao(const Mesa *mesa);
 
 #endif
