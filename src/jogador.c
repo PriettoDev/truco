@@ -25,3 +25,17 @@ void jogador_imprimir(Jogador *j){
         carta_imprimir(j->mao[i]);
     }
 }
+
+int jogador_jogar_carta(Jogador *j, int pos, Carta *c){
+    if(pos<0 || pos>=j->qtdCartas)
+        return 0;
+
+    *c = j->mao[pos];
+
+    for(int i = pos; i<j->qtdCartas-1; i++){
+        j->mao[i] = j->mao[i+1];
+    }
+    j->qtdCartas--;
+
+    return 1;
+}
