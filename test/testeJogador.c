@@ -17,9 +17,9 @@ int main(){
     char nomeOrigem3[30] = "Manu";
     int dupla3 = 1;
     
-    Jogador jogador1 = jogador_criar(nomeOrigem1, dupla1);
-    Jogador jogador3 = jogador_criar(nomeOrigem2, dupla2);
-    Jogador jogador2 = jogador_criar(nomeOrigem3, dupla3);
+    Jogador jogador1 = jogador_criar(nomeOrigem1, dupla1, 0);
+    Jogador jogador3 = jogador_criar(nomeOrigem2, dupla2, 1);
+    Jogador jogador2 = jogador_criar(nomeOrigem3, dupla3, 2);
 
     Carta c1 = {OUROS, DOIS};
     Carta c2 = {COPAS, QUATRO};
@@ -53,4 +53,6 @@ int main(){
     jogador_imprimir(&jogador2);
     printf("\nJogador 3:");
     jogador_imprimir(&jogador3);
+    jogador_assento(&jogador1);
+    jogador_assento(NULL);
 }
