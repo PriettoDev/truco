@@ -532,4 +532,6 @@ int main(void) {
             consultarVar(historico, mesa.jogadores);
         }
     }
+    historico = destruirHistorico(historico);
+    return codigoSaida;
 }
