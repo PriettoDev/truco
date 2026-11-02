@@ -14,6 +14,14 @@ int rodada_jogar(Rodada *r, Carta c, int jogador, int dupla) {
     if (jogador < 0 || jogador > 3 || (dupla != 0 && dupla != 1)) {
         return 0;                        /* valida na entrada: a apuracao usa dupla como indice */
     }
+    for (int i = 0; i < r->qtd; i++) {   /* so as posicoes 0..qtd-1 tem jogadas de verdade */
+        if (r->jogadas[i].jogador == jogador) {
+            return 0;                    /* este jogador ja jogou nesta rodada */
+        }
+    }
+    if (dupla != jogador % 2) {          /* assentos pares = dupla 0, impares = dupla 1 */
+        return 0;
+    }
     r->jogadas[r->qtd].carta   = c;      /* r-> (ponteiro), jogadas[qtd] (struct), .carta */
     r->jogadas[r->qtd].jogador = jogador;
     r->jogadas[r->qtd].dupla   = dupla;
