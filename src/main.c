@@ -41,7 +41,7 @@ int main(){
         scanf(" %29[^\n]", nomeDigitado);
 
         // Cria e guarda o jogador usando a funcao da biblioteca jogador.h
-        mesa.jogadores[i] = jogador_criar(nomeDigitado, dupla);
+        mesa.jogadores[i] = jogador_criar(nomeDigitado, dupla, i);
         if (!inserirMesa(&mesa.ordem, &mesa.jogadores[i])) {
             printf("Erro ao enfileirar jogador!\n");
             return 1;
