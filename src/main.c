@@ -5,6 +5,10 @@
 #include "mao.h"
 #include "baralho.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 /*
  * VOCABULARIO USADO NESTE ARQUIVO
  *   mao     = cada vez que os 4 jogadores jogam uma carta (Rodada no codigo do Breno)
@@ -196,6 +200,9 @@ static int jogarRodada(Mesa *mesa) {
 /* ------------------------------------------------------------------ */
 
 int main(void) {
+    #ifdef _WIN32
+        SetConsoleOutputCP(CP_UTF8);   /* faz o terminal do Windows entender UTF-8 (os naipes) */
+    #endif
     Mesa mesa;
 
     srand((unsigned) time(NULL));   // para o embaralhamento mudar a cada jogo
