@@ -23,10 +23,11 @@
 // Cria a mesa, os 4 jogadores e coloca todos na lista circular.
 // Retorna 1 se deu certo, 0 se houve erro.
 static int configurarMesa(Mesa *mesa) {
-    if (!inicializarMesa(mesa)) {
-        printf("Erro ao inicializar a mesa.\n");
-        return 0;
-    }
+    inicializarMesa(&mesa->ordem);    // fila circular vazia
+    mesa->numeroDaRodada = 1;
+    mesa->inicioDaRodada = -1;
+    mesa->pontosDupla1 = 0;
+    mesa->pontosDupla2 = 0;
 
     // Posicoes 0 e 2 formam a dupla 1; posicoes 1 e 3 formam a dupla 2
     mesa->jogadores[0] = jogador_criar("Lucas", 1, 0);
@@ -34,10 +35,9 @@ static int configurarMesa(Mesa *mesa) {
     mesa->jogadores[2] = jogador_criar("Pedro", 1, 2);
     mesa->jogadores[3] = jogador_criar("Maria", 2, 3);
 
-    for (int i = 0; i < MAX_JOGADOR; i++) {
-        if (!inserirJogadorNaOrdem(mesa, i)) {
+    for (int i = 0; i < NUM_JOGADORES; i++) {
+        if (!inserirMesa(&mesa->ordem, &mesa->jogadores[i])) {   // a fila guarda o ENDERECO do jogador
             printf("Erro ao inserir jogador.\n");
-            destruirMesa(mesa);
             return 0;
         }
     }
@@ -59,7 +59,7 @@ static int distribuirCartas(Mesa *mesa, Valor *manilha) {
     criaBaralho(&baralho);
     embaralhaBaralho(&baralho);
 
-    for (int i = 0; i < MAX_JOGADOR; i++) {
+    for (int i = 0; i < NUM_JOGADORES; i++) {
         Carta c1, c2, c3;
 
         if (!retiraCarta(&baralho, &c1) ||
@@ -92,20 +92,23 @@ static int distribuirCartas(Mesa *mesa, Valor *manilha) {
 
 // Cada jogador, na ordem da lista, joga uma carta.
 static void jogarCartas(Mesa *mesa, Mao *mao) {
-    for (tp_no *no = mesa->ordem->ini; no != NULL; no = no->prox) {
-        int j = no->info;   // posicao do jogador (0 a 3)
+    Ordem fila = mesa->ordem;   // COPIA da fila: tirar jogadores da copia nao mexe na ordem real
+    Jogador *jog;
+
+    while (removerMesa(&fila, &jog)) {
+        int j = jogador_assento(jog);   // assento do jogador (0 a 3)
 
         // Jogada automatica de teste: na mao N, joga a carta N da mao dele.
         // Para jogo real, troque esta linha pela escolha do jogador.
-        Carta carta = mesa->jogadores[j].mao[mao->rodada_atual];
+        Carta carta = jog->mao[mao->rodada_atual];
 
-        printf("%s joga: ", mesa->jogadores[j].nome);
+        printf("%s joga: ", jog->nome);
         carta_imprimir(carta);
         printf("\n");
 
         // j % 2 = dupla 0 ou 1 (o Mao e o Aposta usam 0 e 1)
         if (!mao_jogar(mao, carta, j, j % 2)) {
-            printf("Jogada invalida do jogador %s.\n", mesa->jogadores[j].nome);
+            printf("Jogada invalida do jogador %s.\n", jog->nome);
         }
     }
 }
@@ -119,15 +122,11 @@ static void mostrarResultadoDaMao(const Mao *mao, int n) {
     }
 }
 
-// Define quem comeca a proxima mao:
-//   - empate: a mesa gira um passo
-//   - vitoria: quem ganhou a mao comeca a proxima
-static void definirQuemAbreProximaMao(Mesa *mesa, const Mao *mao, int n) {
-    if (mao->resultados[n] == EMPATE) {
-        prepararProximaMao(mesa, EMPATE_MAO);
-    } else {
-        prepararProximaMao(mesa, mao->jogador_abre);
-    }
+// Define quem comeca a proxima mao. O modulo Mao ja decide isso:
+//   - vitoria: jogador_abre = quem ganhou
+//   - empate: jogador_abre continua sendo quem abriu
+static void definirQuemAbreProximaMao(Mesa *mesa, const Mao *mao) {
+    definirPrimeiroDaMao(mesa, mao->jogador_abre);
 }
 
 /* ------------------------------------------------------------------ */
@@ -184,7 +183,7 @@ static int jogarRodada(Mesa *mesa) {
         mostrarResultadoDaMao(&mao, n);
 
         if (!mao_terminou(&mao)) {
-            definirQuemAbreProximaMao(mesa, &mao, n);
+            definirQuemAbreProximaMao(mesa, &mao);
         }
     }
 
@@ -216,7 +215,6 @@ int main(void) {
            mesa.pontosDupla2 < PONTOS_PARA_VENCER) {
 
         if (!jogarRodada(&mesa)) {
-            destruirMesa(&mesa);
             return 1;
         }
     }
@@ -227,6 +225,5 @@ int main(void) {
         printf("\nDupla 2 venceu o jogo!\n");
     }
 
-    destruirMesa(&mesa);
     return 0;
 }
