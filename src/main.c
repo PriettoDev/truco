@@ -25,10 +25,10 @@ static int configurarMesa(Mesa *mesa) {
     }
 
     // Posicoes 0 e 2 formam a dupla 1; posicoes 1 e 3 formam a dupla 2
-    mesa->jogadores[0] = jogador_criar("Lucas", 1);
-    mesa->jogadores[1] = jogador_criar("Ana", 2);
-    mesa->jogadores[2] = jogador_criar("Pedro", 1);
-    mesa->jogadores[3] = jogador_criar("Maria", 2);
+    mesa->jogadores[0] = jogador_criar("Lucas", 1, 0);
+    mesa->jogadores[1] = jogador_criar("Ana", 2, 1);
+    mesa->jogadores[2] = jogador_criar("Pedro", 1, 2);
+    mesa->jogadores[3] = jogador_criar("Maria", 2, 3);
 
     for (int i = 0; i < MAX_JOGADOR; i++) {
         if (!inserirJogadorNaOrdem(mesa, i)) {
