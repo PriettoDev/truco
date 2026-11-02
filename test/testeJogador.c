@@ -53,6 +53,11 @@ int main(){
     jogador_imprimir(&jogador2);
     printf("\nJogador 3:");
     jogador_imprimir(&jogador3);
-    jogador_assento(&jogador1);
-    jogador_assento(NULL);
+    printf("\nassento jogador1: %d\n", jogador_assento(&jogador1));
+    printf("assento NULL: %d\n", jogador_assento(NULL));
+    printf("assento jogador1: %d\n", jogador_assento(&jogador2));
+    printf("assento NULL: %d\n", jogador_assento(NULL));
+    printf("assento jogador1: %d\n", jogador_assento(&jogador3));
+    printf("assento NULL: %d\n", jogador_assento(NULL));
+    
 }
