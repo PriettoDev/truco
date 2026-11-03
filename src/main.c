@@ -124,7 +124,7 @@ static int configurarMesa(Mesa *mesa) {
         int repetido;
         for (;;) {
             int leitura;
-            printf("Nome do Jogador %d (Dupla %d): ", i+1, i%2, 2+1);
+            printf("Nome do Jogador %d (Dupla %d): ", i+1, i%2+1);
             fflush(stdout);
             leitura = lerLinha(nome, sizeof(nome));
             if (leitura == 0) return 0;
