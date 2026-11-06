@@ -8,12 +8,10 @@
 #define PONTOS_PARA_VENCER 12
 
 // Fila circular que guarda a ordem de jogo: os indices, na ordem em que jogam
-//AJUSTAR
 typedef struct {
     Jogador *posicoes[MAX_JOGADOR];
     int ini, fim;
 } Ordem;
-//AJUSTAR
 
 // Representa a mesa: os 4 jogadores sentados e a ordem de jogo atual
 typedef struct {
