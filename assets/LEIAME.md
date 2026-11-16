@@ -29,9 +29,21 @@ Seis imagens por personagem, todas do mesmo tamanho:
 - `logo.png`
 - `verso_carta.png`: só o verso. As faces das cartas são desenhadas pelo jogo.
 - `fonte_titulo.ttf`, `fonte_texto.ttf`: precisam ter os acentos do
-  português (á, ã, ç, ê, ó...).
+  português (á, ã, ç, ê, ó...) e — … “ ”.
 - `fonte_naipes.ttf`: precisa ter os símbolos ♦ ♠ ♥ ♣.
   Se uma fonte faltar, o jogo usa a fonte padrão da raylib.
+
+Fontes provisórias (livres, licença ao lado de cada uma):
+| Arquivo | Fonte | Licença | Origem |
+|---|---|---|---|
+| `fonte_titulo.ttf` | Lilita One Regular | `OFL_lilita_one.txt` | github.com/google/fonts, ofl/lilitaone |
+| `fonte_texto.ttf` | Nunito SemiBold 3.601 (estática) | `OFL_nunito.txt` | github.com/google/fonts, commit 57661967, ofl/nunito |
+| `fonte_naipes.ttf` | DejaVu Sans 2.37 | `LICENSE_dejavu.txt` | github.com/dejavu-fonts, release version_2_37 |
+
+A Lilita One não tem ¯ (U+00AF) nem o espaço sem quebra (U+00A0); nenhum dos
+dois é usado em português. O Nunito vem de um commit antigo porque hoje o
+repositório só publica a versão variável, e a raylib não escolhe o peso de
+fontes variáveis.
 
 ## audio/
 Vazio por enquanto.

@@ -37,8 +37,8 @@ static void desenhar_teste_da_tela(void) {
     recurso_desenhar(REC_UI_LOGO, (Rectangle){ 1120, 380, 300, 200 }, 0, WHITE);
 
     DrawTextEx(titulo, "Truco no Bar do Pato", (Vector2){ 40, 30 }, 96, 1, RAYWHITE);
-    DrawTextEx(texto, "MÃO de truco: ação, Mãe, João, você, à vista", (Vector2){ 40, 140 }, 48, 1, RAYWHITE);
-    DrawTextEx(naipes, "A\u2666  7\u2660  3\u2665  4\u2663", (Vector2){ 1100, 150 }, 96, 1, RAYWHITE);
+    DrawTextEx(texto, "MÃO de 3 \u2014 VOCÊ pede truco\u2026", (Vector2){ 40, 140 }, 48, 1, RAYWHITE);
+    DrawTextEx(naipes, "\u2666 \u2660 \u2665 \u2663", (Vector2){ 1100, 150 }, 96, 1, RAYWHITE);
     DrawTextEx(texto, TextFormat("mouse logico: %.0f, %.0f", mouse.x, mouse.y),
                (Vector2){ 40, 210 }, 36, 1, RAYWHITE);
 

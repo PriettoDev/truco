@@ -99,13 +99,21 @@ static int montar_codepoints(FonteId id, int *codepoints) {
     } else {
         /* Latin-1 (a0 a ff): acentos do portugues, como em MAO com til. */
         for (int c = 0xA0; c <= 0xFF; c++) codepoints[n++] = c;
+        /* Pontuacao tipografica das falas e mensagens. */
+        codepoints[n++] = 0x2014;   /* travessao   */
+        codepoints[n++] = 0x2026;   /* reticencias */
+        codepoints[n++] = 0x201C;   /* aspas curvas de abertura   */
+        codepoints[n++] = 0x201D;   /* aspas curvas de fechamento */
     }
     return n;
 }
 
+/* Maior lista possivel: ASCII (95) + Latin-1 (96) + pontuacao (4). */
+#define MAX_CODEPOINTS (95 + 96 + 4)
+
 static void carregar_fonte(FonteId id) {
     char caminho[TAMANHO_CAMINHO];
-    int codepoints[95 + 96];
+    int codepoints[MAX_CODEPOINTS];
     int quantidade;
 
     fontes[id] = GetFontDefault();   /* garante uma fonte valida em qualquer caso */
