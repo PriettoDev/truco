@@ -16,6 +16,12 @@ A apresentação será provavelmente em Windows; o desenvolvimento é em macOS.
 - ATENÇÃO à numeração das duplas: rodada, mao e aposta usam 0 e 1;
   Jogador.dupla e historico usam 1 e 2. Dentro da interface, use sempre
   assento % 2 para a dupla interna e +1 apenas para exibir na tela.
+  - Terceira numeração: RegistroRodada.duplaVencedora (historico) usa -1 para
+    indefinido, 0 para empate e 1/2 para as duplas; EventoAposta.dupla usa 1/2.
+    Ao exibir ou registrar no VAR, converta explicitamente a partir de
+    rodada/mao (0/1 e EMPATE = -1).
+  - Nomes enganosos em Mesa: numeroDaRodada e inicioDaRodada se referem à MÃO,
+    não à rodada.
 - O fluxo da partida do main.c está em funções static que leem o teclado:
   não reaproveitar. O main_gui.c refaz o fluxo como máquina de estados,
   chamando diretamente os módulos.
