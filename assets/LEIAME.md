@@ -18,7 +18,10 @@ Seis imagens por personagem, todas do mesmo tamanho:
 - `pN_frente_neutro.png`, `pN_frente_piscando.png`, `pN_frente_falando.png`:
   vista de frente (usada para o parceiro, sentado à frente).
 - `pN_lado_neutro.png`, `pN_lado_piscando.png`, `pN_lado_falando.png`:
-  perfil olhando para a DIREITA. Na posição esquerda o jogo espelha a imagem.
+  perfil olhando para a DIREITA. Na posição esquerda da tela a imagem é usada
+  como está (já olha para a mesa); na posição direita o jogo espelha. Se a
+  arte vier virada para o outro lado, basta inverter uma constante em
+  `gui/cena.h` (`CENA_ARTE_LADO_OLHA_PARA_DIREITA`).
 
 ## paineis/
 Áreas sobre objetos já pintados no panorama:
@@ -44,6 +47,15 @@ A Lilita One não tem ¯ (U+00AF) nem o espaço sem quebra (U+00A0); nenhum dos
 dois é usado em português. O Nunito vem de um commit antigo porque hoje o
 repositório só publica a versão variável, e a raylib não escolhe o peso de
 fontes variáveis.
+
+Para trocar uma fonte, confira antes se ela tem todos os caracteres que o
+jogo usa (da raiz do repositório):
+
+    python3 gui/ferramentas/conferir_fontes.py
+
+O script lê o `.ttf` direto, sem instalar nada, e lista o que falta em cada
+fonte. Sai com 0 se está tudo certo. Faltas já avaliadas e aceitas ficam na
+lista `ACEITOS` do script.
 
 ## audio/
 Vazio por enquanto.
