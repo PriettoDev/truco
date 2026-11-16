@@ -11,6 +11,7 @@
 #include "raylib.h"
 #include "tela.h"
 #include "recursos.h"
+#include "cena.h"
 
 /* Tamanho inicial pensado para caber em notebooks; o minimo e metade da
    resolucao logica, abaixo disso as cartas e textos ficam pequenos demais. */
@@ -19,31 +20,28 @@
 #define JANELA_LARGURA_MINIMA   960
 #define JANELA_ALTURA_MINIMA    540
 
-/* PROVISORIO (some no commit 4): mostra marcadores, um personagem normal e
-   espelhado, as fontes e a mira do mouse para conferir tela e recursos. */
-static void desenhar_teste_da_tela(void) {
-    Vector2 mouse = tela_mouse();
-    Font titulo = recurso_fonte(FONTE_TITULO);
-    Font texto = recurso_fonte(FONTE_TEXTO);
-    Font naipes = recurso_fonte(FONTE_NAIPES);
+/* PROVISORIO (some quando a maquina de estados escolher o assento): teclas
+   1 a 4 trocam o assento visto, para conferir a rotacao da mesa. */
+static int assentoVisto = 0;
 
-    recurso_desenhar(REC_FUNDO_PANORAMA, (Rectangle){ 0, 0, TELA_LARGURA, TELA_ALTURA }, 0, WHITE);
-    recurso_desenhar(recurso_personagem(2, VISTA_LADO, EXPRESSAO_NEUTRO),
-                     (Rectangle){ 1500, 300, 360, 520 }, 0, WHITE);
-    recurso_desenhar(recurso_personagem(2, VISTA_LADO, EXPRESSAO_NEUTRO),
-                     (Rectangle){ 60, 300, 360, 520 }, 1, WHITE);       /* espelhado */
-    recurso_desenhar(REC_UI_VERSO_CARTA, (Rectangle){ 860, 700, 200, 300 }, 0, WHITE);
-    recurso_desenhar(REC_FUNDO_MESA, (Rectangle){ 500, 380, 300, 200 }, 0, WHITE);
-    recurso_desenhar(REC_UI_LOGO, (Rectangle){ 1120, 380, 300, 200 }, 0, WHITE);
+static void tratar_teclas_provisorias(void) {
+    if (IsKeyPressed(KEY_ONE))   assentoVisto = 0;
+    if (IsKeyPressed(KEY_TWO))   assentoVisto = 1;
+    if (IsKeyPressed(KEY_THREE)) assentoVisto = 2;
+    if (IsKeyPressed(KEY_FOUR))  assentoVisto = 3;
+}
 
-    DrawTextEx(titulo, "Truco no Bar do Pato", (Vector2){ 40, 30 }, 96, 1, RAYWHITE);
-    DrawTextEx(texto, "MÃO de 3 \u2014 VOCÊ pede truco\u2026", (Vector2){ 40, 140 }, 48, 1, RAYWHITE);
-    DrawTextEx(naipes, "\u2666 \u2660 \u2665 \u2663", (Vector2){ 1100, 150 }, 96, 1, RAYWHITE);
-    DrawTextEx(texto, TextFormat("mouse logico: %.0f, %.0f", mouse.x, mouse.y),
-               (Vector2){ 40, 210 }, 36, 1, RAYWHITE);
+/* PROVISORIO: mostra no canto de quem e a camera. Assentos internos (0 a 3),
+   os mesmos de Jogador.assento, para comparar direto com a regra p(s+1). */
+static void desenhar_assento_visto(void) {
+    Font fonte = recurso_fonte(FONTE_TEXTO);
+    const char *texto = TextFormat("Vista do assento %d (p%d) \u2014 teclas 1 a 4",
+                                   assentoVisto, cena_personagem_do_assento(assentoVisto));
+    Vector2 medida = MeasureTextEx(fonte, texto, 40.0f, 1.0f);
+    Rectangle fundo = { 24, TELA_ALTURA - medida.y - 48, medida.x + 32, medida.y + 24 };
 
-    DrawLineEx((Vector2){ mouse.x - 30, mouse.y }, (Vector2){ mouse.x + 30, mouse.y }, 4, YELLOW);
-    DrawLineEx((Vector2){ mouse.x, mouse.y - 30 }, (Vector2){ mouse.x, mouse.y + 30 }, 4, YELLOW);
+    DrawRectangleRounded(fundo, 0.4f, 8, Fade(BLACK, 0.7f));
+    DrawTextEx(fonte, texto, (Vector2){ fundo.x + 16, fundo.y + 12 }, 40.0f, 1.0f, RAYWHITE);
 }
 
 int main(void) {
@@ -63,12 +61,15 @@ int main(void) {
 
     tela_iniciar();
     recursos_carregar();
+    cena_conferir_posicoes();
 
     while (!WindowShouldClose()) {
         if (IsKeyPressed(KEY_F11)) tela_alternar_tela_cheia();
+        tratar_teclas_provisorias();
 
         tela_comecar_desenho();
-        desenhar_teste_da_tela();
+        cena_desenhar(assentoVisto);
+        desenhar_assento_visto();
         tela_terminar_desenho();
     }
 
