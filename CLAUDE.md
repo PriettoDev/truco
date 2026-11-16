@@ -47,6 +47,10 @@ A apresentação será provavelmente em Windows; o desenvolvimento é em macOS.
   "lado" olha para a DIREITA: na esquerda da tela é usada como está, na
   direita é espelhada. A constante CENA_ARTE_LADO_OLHA_PARA_DIREITA em
   gui/cena.h inverte isso numa linha.
+- Painéis do bar (lousa, tv, mural, caderneta) são clicáveis: nenhum pode
+  ficar atrás de personagem nem da mesa. cena_conferir_posicoes() avisa no
+  terminal se um ajuste em gui/cena.h quebrar isso. Posições finais vêm com
+  a arte.
 - Recursos carregados por nome fixo em assets/. Se um arquivo não existir,
   desenhar um retângulo colorido com o nome dele, sem travar.
 - Texturas com no máximo 4096 px de lado.
@@ -55,6 +59,14 @@ A apresentação será provavelmente em Windows; o desenvolvimento é em macOS.
   testar o F11 (ToggleBorderlessWindowed) e a tela cheia no Windows.
 - Fora do escopo: online, chat, emotes, bots, carta escondida, cronômetro,
   mão de onze.
+
+## Conferência visual
+- Para conferir a tela, use só TakeScreenshot de dentro de um programa do
+  jogo, com os arquivos no scratchpad. NUNCA use screencapture, osascript ou
+  qualquer captura do sistema.
+- No Retina, o TakeScreenshot da raylib 6.2 salva a imagem com o dobro do
+  tamanho e o conteúdo real no quadrante inferior esquerdo: recorte esse
+  quadrante antes de olhar.
 
 ## Decisões de jogabilidade
 - somarPontos: refeito no main_gui.c (é static no main.c), marcado com o
