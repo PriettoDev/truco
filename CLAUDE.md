@@ -39,6 +39,14 @@ A apresentação será provavelmente em Windows; o desenvolvimento é em macOS.
 - Modo "passa a vez": 4 jogadores humanos no mesmo computador. A câmera é de
   quem joga; os outros 3 aparecem à esquerda, à frente (parceiro) e à direita.
   Entre as vezes, uma tela cobre as cartas.
+- Assentos (sentido anti-horário): vista do assento A: direita = (A+1)%4,
+  frente = (A+2)%4 (parceiro), esquerda = (A+3)%4. O jogador do assento s usa
+  o personagem p(s+1).
+- Personagens: 6 imagens cada (vista frente/lado × neutro/piscando/falando).
+  O parceiro (frente) usa a vista "frente"; os laterais usam "lado". A arte
+  "lado" olha para a DIREITA: na esquerda da tela é usada como está, na
+  direita é espelhada. A constante CENA_ARTE_LADO_OLHA_PARA_DIREITA em
+  gui/cena.h inverte isso numa linha.
 - Recursos carregados por nome fixo em assets/. Se um arquivo não existir,
   desenhar um retângulo colorido com o nome dele, sem travar.
 - Texturas com no máximo 4096 px de lado.
