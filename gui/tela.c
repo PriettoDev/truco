@@ -60,6 +60,13 @@ static void ajustar_alvo(void) {
     /* Bilinear suaviza o arredondamento de meio pixel entre textura e tela. */
     SetTextureFilter(alvo.texture, TEXTURE_FILTER_BILINEAR);
     alvoCarregado = 1;
+
+    /* Diagnostico so quando o tamanho muda: permite conferir no terminal se
+       o letterbox bate com a janela real (Retina, notch, tela cheia). */
+    TraceLog(LOG_INFO, "TELA: janela %dx%d pontos | %dx%d pixels | cena %.0fx%.0f "
+             "pontos em (%.1f, %.1f) | textura %dx%d",
+             GetScreenWidth(), GetScreenHeight(), GetRenderWidth(), GetRenderHeight(),
+             destino.width, destino.height, destino.x, destino.y, largura, altura);
 }
 
 void tela_iniciar(void) {
