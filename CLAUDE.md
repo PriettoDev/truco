@@ -1,0 +1,49 @@
+# Truco no Bar do Pato — interface gráfica (raylib)
+
+## Contexto
+Trabalho da disciplina AED (SENAI CIMATEC), em C. Entrega em 29/11/2026.
+A apresentação será provavelmente em Windows; o desenvolvimento é em macOS.
+
+## Regras invioláveis
+- NUNCA alterar os módulos de regra (carta, rodada, mao, aposta, jogador, mesa,
+  historico, baralho) nem o main.c do terminal. A interface só lê o estado e
+  chama funções existentes. Se faltar uma função, PARE e me avise.
+- A versão de terminal deve continuar compilando: é a entrega oficial do edital.
+- A branch base é develop (a main está desatualizada).
+- Os módulos ficam em src/. A interface fica em gui/ e inclui os .h de ../src/.
+  Recursos gráficos e de áudio ficam em assets/.
+- Executáveis são gerados em output/ (já ignorado pelo .gitignore).
+- ATENÇÃO à numeração das duplas: rodada, mao e aposta usam 0 e 1;
+  Jogador.dupla e historico usam 1 e 2. Dentro da interface, use sempre
+  assento % 2 para a dupla interna e +1 apenas para exibir na tela.
+- O fluxo da partida do main.c está em funções static que leem o teclado:
+  não reaproveitar. O main_gui.c refaz o fluxo como máquina de estados,
+  chamando diretamente os módulos.
+- Tudo compila sem avisos com gcc -Wall, em macOS e em Windows (MinGW).
+- Comentários em português, explicando o PORQUÊ.
+- Antes de cada etapa, explique o plano em poucas linhas e espere meu OK.
+- Commits pequenos na branch feature/interface-grafica. Nunca push na main
+  nem na develop.
+
+## Arquitetura da tela
+- Resolução lógica 1920x1080, desenhada em RenderTexture e ajustada à janela.
+- Camadas, de trás para a frente: fundo (panorama com paralaxe), objetos vivos
+  do bar, personagens (3 imagens cada: neutro, piscando, falando; respiração e
+  piscada feitas por código), mesa, mão do jogador, interface.
+- Modo "passa a vez": 4 jogadores humanos no mesmo computador. A câmera é de
+  quem joga; os outros 3 aparecem à esquerda, à frente (parceiro) e à direita.
+  Entre as vezes, uma tela cobre as cartas.
+- Recursos carregados por nome fixo em assets/. Se um arquivo não existir,
+  desenhar um retângulo colorido com o nome dele, sem travar.
+- Texturas com no máximo 4096 px de lado.
+- Fora do escopo: online, chat, emotes, bots, carta escondida, cronômetro,
+  mão de onze.
+
+## Decisões de jogabilidade
+- somarPontos: refeito no main_gui.c (é static no main.c), marcado com o
+  comentário "TEMPORARIO: substituir pela funcao publica do modulo de partida
+  (Pessoa 1)". Não alterar src/.
+- Truco no modo passa a vez: só quem está na vez pode pedir, antes de jogar
+  a carta. Quem responde é o próximo jogador da dupla adversária na ordem de
+  jogo: aparece a tela de passa a vez para ele, que escolhe aceitar, correr ou
+  aumentar; depois o computador volta para quem pediu.
