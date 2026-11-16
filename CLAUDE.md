@@ -42,6 +42,9 @@ A apresentação será provavelmente em Windows; o desenvolvimento é em macOS.
 - Recursos carregados por nome fixo em assets/. Se um arquivo não existir,
   desenhar um retângulo colorido com o nome dele, sem travar.
 - Texturas com no máximo 4096 px de lado.
+- Tela cheia: no macOS o F11 maximiza/restaura (a tela cheia da raylib perde o
+  Retina); a tela cheia de verdade é o botão verde ou Ctrl+Cmd+F. PENDENTE:
+  testar o F11 (ToggleBorderlessWindowed) e a tela cheia no Windows.
 - Fora do escopo: online, chat, emotes, bots, carta escondida, cronômetro,
   mão de onze.
 
