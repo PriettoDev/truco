@@ -231,6 +231,33 @@ void recurso_desenhar(RecursoId id, Rectangle destino, int espelhado, Color tint
     DrawTexturePro(texturas[id], origem, destino, (Vector2){ 0.0f, 0.0f }, 0.0f, tinta);
 }
 
+void recurso_desenhar_girado(RecursoId id, Vector2 centro, Vector2 tamanho,
+                             float graus, Color tinta) {
+    /* Na raylib a rotacao e em torno de "origin", medido a partir do canto do
+       destino; com origin = metade do tamanho e destino no centro, gira em
+       torno do centro. */
+    Rectangle destino = { centro.x, centro.y, tamanho.x, tamanho.y };
+    Vector2 meio = { tamanho.x * 0.5f, tamanho.y * 0.5f };
+
+    if (!recurso_existe(id)) {
+        Font fonte = recurso_fonte(FONTE_TEXTO);
+        Color cor = ColorTint(cor_do_nome(recurso_nome(id)), tinta);
+        float letra = 14.0f;
+        Vector2 medida = MeasureTextEx(fonte, recurso_nome(id), letra, 1.0f);
+        cor.a = (unsigned char)(220 * tinta.a / 255);
+        DrawRectanglePro(destino, meio, graus, cor);
+        /* Texto pequeno e girado junto: so para identificar, o marcador e
+           do tamanho de uma carta. */
+        DrawTextPro(fonte, recurso_nome(id), centro,
+                    (Vector2){ medida.x * 0.5f, medida.y * 0.5f }, graus + 90.0f,
+                    letra, 1.0f, Fade(BLACK, tinta.a / 255.0f));
+        return;
+    }
+    DrawTexturePro(texturas[id],
+                   (Rectangle){ 0.0f, 0.0f, (float)texturas[id].width, (float)texturas[id].height },
+                   destino, meio, graus, tinta);
+}
+
 Font recurso_fonte(FonteId id) {
     if ((int)id < 0 || (int)id >= FONTE_TOTAL) return GetFontDefault();
     /* Antes do recursos_carregar o vetor ainda esta zerado: cai na padrao. */

@@ -57,9 +57,14 @@ const char *recurso_nome(RecursoId id);
 Vector2 recurso_tamanho(RecursoId id);
 
 /* Desenha a imagem esticada no retangulo (coordenadas logicas). espelhado=1
-   inverte na horizontal (personagem de lado na posicao esquerda). Sem o
+   inverte na horizontal (personagem de lado na posicao direita). Sem o
    arquivo, desenha o marcador provisorio no mesmo retangulo. */
 void recurso_desenhar(RecursoId id, Rectangle destino, int espelhado, Color tinta);
+
+/* Mesma ideia, girada em graus em torno do centro (versos em leque, cartas
+   dos jogadores laterais). O marcador provisorio gira junto. */
+void recurso_desenhar_girado(RecursoId id, Vector2 centro, Vector2 tamanho,
+                             float graus, Color tinta);
 
 /* Sempre devolve uma fonte utilizavel: a do arquivo ou a padrao da raylib. */
 Font recurso_fonte(FonteId id);

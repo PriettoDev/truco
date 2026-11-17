@@ -1,0 +1,144 @@
+#include <math.h>   /* expf, para a animacao independente do FPS */
+
+#include "desenho_cartas.h"
+#include "recursos.h"
+
+#define MAX_CARTAS_MAO 3
+
+/* Cores da face. Vermelho e preto vem do naipe (enum), nao do texto, para
+   nao depender de comparar simbolos UTF-8. */
+static const Color COR_PAPEL    = { 250, 246, 236, 255 };
+static const Color COR_BORDA    = {  70,  64,  58, 255 };
+static const Color COR_VERMELHO = { 196,  30,  45, 255 };
+static const Color COR_PRETO    = {  28,  28,  32, 255 };
+
+/* Quanto cada carta da mao esta levantada agora (0 ate DESENHO_MAO_ELEVACAO). */
+static float elevacao[MAX_CARTAS_MAO];
+
+static Color cor_do_naipe(Naipe naipe) {
+    return (naipe == OUROS || naipe == COPAS) ? COR_VERMELHO : COR_PRETO;
+}
+
+/* Valor e naipe empilhados e centralizados numa coluna, como no canto de um
+   baralho de verdade. rotacao 180 desenha o canto de baixo, de ponta-cabeca. */
+static void desenhar_canto(Carta carta, Vector2 ponto, float largura, float rotacao) {
+    Font fonteValor = recurso_fonte(FONTE_TITULO);
+    Font fonteNaipe = recurso_fonte(FONTE_NAIPES);
+    const char *valor = valor_texto(carta.valor);
+    const char *naipe = naipe_texto(carta.naipe);
+    float tamValor = largura * 0.26f;
+    float tamNaipe = largura * 0.19f;
+    Vector2 medValor = MeasureTextEx(fonteValor, valor, tamValor, 0.0f);
+    Vector2 medNaipe = MeasureTextEx(fonteNaipe, naipe, tamNaipe, 0.0f);
+    float coluna = largura * 0.14f;   /* centro da coluna, a partir da borda */
+    Color cor = cor_do_naipe(carta.naipe);
+
+    /* origin e medido a partir do ponto: com rotacao 180 o mesmo desenho
+       "cresce" para cima e para a esquerda, espelhando o canto de cima. */
+    DrawTextPro(fonteValor, valor, ponto,
+                (Vector2){ -(coluna - medValor.x * 0.5f), 0.0f }, rotacao, tamValor, 0.0f, cor);
+    DrawTextPro(fonteNaipe, naipe, ponto,
+                (Vector2){ -(coluna - medNaipe.x * 0.5f), -medValor.y * 0.92f },
+                rotacao, tamNaipe, 0.0f, cor);
+}
+
+void desenho_carta_face(Carta carta, Rectangle area) {
+    Font fonteNaipe = recurso_fonte(FONTE_NAIPES);
+    const char *naipe = naipe_texto(carta.naipe);
+    float largura = area.width;
+    float margem = largura * 0.05f;
+    float tamCentro = largura * 0.62f;
+    Vector2 medCentro = MeasureTextEx(fonteNaipe, naipe, tamCentro, 0.0f);
+
+    /* Sombra deslocada: separa a carta da mesa sem precisar de imagem. */
+    DrawRectangleRounded((Rectangle){ area.x + largura * 0.03f, area.y + largura * 0.04f,
+                                      area.width, area.height },
+                         0.12f, 12, Fade(BLACK, 0.35f));
+    DrawRectangleRounded(area, 0.12f, 12, COR_PAPEL);
+    DrawRectangleRoundedLinesEx(area, 0.12f, 12, largura * 0.012f, COR_BORDA);
+
+    desenhar_canto(carta, (Vector2){ area.x + margem * 0.4f, area.y + margem }, largura, 0.0f);
+    desenhar_canto(carta, (Vector2){ area.x + area.width - margem * 0.4f,
+                                     area.y + area.height - margem },
+                   largura, 180.0f);
+
+    DrawTextEx(fonteNaipe, naipe,
+               (Vector2){ area.x + (area.width - medCentro.x) * 0.5f,
+                          area.y + (area.height - medCentro.y) * 0.5f },
+               tamCentro, 0.0f, cor_do_naipe(carta.naipe));
+}
+
+static float centro_x_na_mao(int i, int quantidade) {
+    /* Centraliza qualquer quantidade (3, 2 ou 1 carta) no meio da tela. */
+    return 960.0f + ((float)i - (quantidade - 1) * 0.5f) * DESENHO_MAO_ESPACO;
+}
+
+static Rectangle area_na_mao(int i, int quantidade) {
+    float altura = DESENHO_MAO_LARGURA_CARTA * DESENHO_CARTA_PROPORCAO;
+    return (Rectangle){ centro_x_na_mao(i, quantidade) - DESENHO_MAO_LARGURA_CARTA * 0.5f,
+                        DESENHO_MAO_TOPO - elevacao[i],
+                        DESENHO_MAO_LARGURA_CARTA, altura };
+}
+
+void desenho_mao_atualizar(int quantidade, Vector2 mouse, float dt) {
+    /* Aproximacao exponencial: anda uma fracao do caminho a cada quadro,
+       com a fracao calculada pelo tempo real. Fica suave e igual a 30 ou
+       120 FPS, sem guardar inicio nem duracao de animacao. */
+    float passo = 1.0f - expf(-DESENHO_MAO_SUAVIDADE * dt);
+
+    if (quantidade > MAX_CARTAS_MAO) quantidade = MAX_CARTAS_MAO;
+    for (int i = 0; i < quantidade; i++) {
+        Rectangle area = area_na_mao(i, quantidade);
+        float alvo;
+
+        /* A area de toque vai da posicao levantada ate a base: sem isso, com
+           o mouse na borda de baixo, a carta subiria, sairia de baixo do
+           mouse, desceria e ficaria tremendo. */
+        area.height += elevacao[i];
+        alvo = CheckCollisionPointRec(mouse, area) ? DESENHO_MAO_ELEVACAO : 0.0f;
+        elevacao[i] += (alvo - elevacao[i]) * passo;
+    }
+    for (int i = quantidade; i < MAX_CARTAS_MAO; i++) elevacao[i] = 0.0f;
+}
+
+void desenho_mao(const Carta cartas[], int quantidade) {
+    if (quantidade > MAX_CARTAS_MAO) quantidade = MAX_CARTAS_MAO;
+    for (int i = 0; i < quantidade; i++) {
+        desenho_carta_face(cartas[i], area_na_mao(i, quantidade));
+    }
+}
+
+void desenho_vira(Carta vira) {
+    Font fonte = recurso_fonte(FONTE_TEXTO);
+    float altura = DESENHO_VIRA_LARGURA * DESENHO_CARTA_PROPORCAO;
+    Rectangle area = { DESENHO_VIRA_CENTRO.x - DESENHO_VIRA_LARGURA * 0.5f,
+                       DESENHO_VIRA_CENTRO.y - altura * 0.5f,
+                       DESENHO_VIRA_LARGURA, altura };
+    Vector2 medida = MeasureTextEx(fonte, "VIRA", 30.0f, 1.0f);
+
+    desenho_carta_face(vira, area);
+    DrawTextEx(fonte, "VIRA",
+               (Vector2){ DESENHO_VIRA_CENTRO.x - medida.x * 0.5f, area.y + altura + 8.0f },
+               30.0f, 1.0f, RAYWHITE);
+}
+
+/* Leque de versos: cada carta um pouco deslocada e inclinada em relacao ao
+   centro, e o leque inteiro girado para o lado de quem segura. */
+static void desenhar_leque(int quantidade, Vector2 centro, float grausLeque) {
+    Vector2 tamanho = { DESENHO_VERSO_LARGURA, DESENHO_VERSO_LARGURA * DESENHO_CARTA_PROPORCAO };
+    float rad = grausLeque * DEG2RAD;
+
+    for (int i = 0; i < quantidade; i++) {
+        float posicao = (float)i - (quantidade - 1) * 0.5f;   /* -1, 0, +1 */
+        float desloc = posicao * DESENHO_VERSO_LARGURA * 0.55f;
+        /* Desloca ao longo do eixo do leque ja girado. */
+        Vector2 c = { centro.x + desloc * cosf(rad), centro.y + desloc * sinf(rad) };
+        recurso_desenhar_girado(REC_UI_VERSO_CARTA, c, tamanho, grausLeque + posicao * 9.0f, WHITE);
+    }
+}
+
+void desenho_versos_dos_outros(int qtdDireita, int qtdFrente, int qtdEsquerda) {
+    desenhar_leque(qtdFrente, DESENHO_VERSOS_FRENTE_CENTRO, DESENHO_VERSOS_FRENTE_GRAUS);
+    desenhar_leque(qtdEsquerda, DESENHO_VERSOS_ESQUERDA_CENTRO, DESENHO_VERSOS_ESQUERDA_GRAUS);
+    desenhar_leque(qtdDireita, DESENHO_VERSOS_DIREITA_CENTRO, DESENHO_VERSOS_DIREITA_GRAUS);
+}

@@ -12,6 +12,7 @@
 #include "tela.h"
 #include "recursos.h"
 #include "cena.h"
+#include "desenho_cartas.h"
 
 /* Tamanho inicial pensado para caber em notebooks; o minimo e metade da
    resolucao logica, abaixo disso as cartas e textos ficam pequenos demais. */
@@ -19,6 +20,12 @@
 #define JANELA_ALTURA_INICIAL   720
 #define JANELA_LARGURA_MINIMA   960
 #define JANELA_ALTURA_MINIMA    540
+
+/* PROVISORIO (sai quando a mao vier do baralho de verdade): cartas fixas de
+   exemplo. Com a vira 2 de ouros a manilha e o 3, entao o 3 de paus e o zap,
+   o que ajuda a conferir o painel de cartas mais fortes no commit 6. */
+static const Carta maoExemplo[3] = { { PAUS, TRES }, { ESPADAS, AS }, { COPAS, SETE } };
+static const Carta viraExemplo = { OUROS, DOIS };
 
 /* PROVISORIO (some quando a maquina de estados escolher o assento): teclas
    1 a 4 trocam o assento visto, para conferir a rotacao da mesa. */
@@ -66,9 +73,13 @@ int main(void) {
     while (!WindowShouldClose()) {
         if (IsKeyPressed(KEY_F11)) tela_alternar_tela_cheia();
         tratar_teclas_provisorias();
+        desenho_mao_atualizar(3, tela_mouse(), GetFrameTime());
 
         tela_comecar_desenho();
-        cena_desenhar(assentoVisto);
+        cena_desenhar(assentoVisto);                 /* camadas 1 a 4 */
+        desenho_versos_dos_outros(3, 3, 3);          /* em cima da mesa */
+        desenho_vira(viraExemplo);
+        desenho_mao(maoExemplo, 3);                  /* camada 5 */
         desenhar_assento_visto();
         tela_terminar_desenho();
     }
