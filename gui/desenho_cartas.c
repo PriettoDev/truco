@@ -16,6 +16,13 @@ static const Color COR_PRETO    = {  28,  28,  32, 255 };
 /* Quanto cada carta da mao esta levantada agora (0 ate DESENHO_MAO_ELEVACAO). */
 static float elevacao[MAX_CARTAS_MAO];
 
+/* x atual do centro de cada carta da mao, valido para qtdPosicoes cartas.
+   Quando uma carta sai, as outras continuam onde estavam e deslizam ate o
+   lugar novo, em vez de pular. Se a quantidade desenhada nao bate (mao
+   nova, outro jogador), as posicoes de repouso valem e nada desliza. */
+static float posicaoX[MAX_CARTAS_MAO];
+static int qtdPosicoes = -1;
+
 static Color cor_do_naipe(Naipe naipe) {
     return (naipe == OUROS || naipe == COPAS) ? COR_VERMELHO : COR_PRETO;
 }
@@ -159,9 +166,15 @@ static float centro_x_na_mao(int i, int quantidade) {
     return 960.0f + ((float)i - (quantidade - 1) * 0.5f) * DESENHO_MAO_ESPACO;
 }
 
+/* Onde a carta i esta agora: deslizando, se as posicoes valem para esta
+   quantidade, ou no lugar de repouso. */
+static float x_atual_na_mao(int i, int quantidade) {
+    return (quantidade == qtdPosicoes) ? posicaoX[i] : centro_x_na_mao(i, quantidade);
+}
+
 static Rectangle area_na_mao(int i, int quantidade) {
     float altura = DESENHO_MAO_LARGURA_CARTA * DESENHO_CARTA_PROPORCAO;
-    return (Rectangle){ centro_x_na_mao(i, quantidade) - DESENHO_MAO_LARGURA_CARTA * 0.5f,
+    return (Rectangle){ x_atual_na_mao(i, quantidade) - DESENHO_MAO_LARGURA_CARTA * 0.5f,
                         DESENHO_MAO_TOPO - elevacao[i],
                         DESENHO_MAO_LARGURA_CARTA, altura };
 }
@@ -185,6 +198,38 @@ void desenho_mao_atualizar(int quantidade, Vector2 mouse, float dt) {
         elevacao[i] += (alvo - elevacao[i]) * passo;
     }
     for (int i = quantidade; i < MAX_CARTAS_MAO; i++) elevacao[i] = 0.0f;
+}
+
+void desenho_mao_retirar(int posicao, int quantidadeAntes) {
+    if (quantidadeAntes > MAX_CARTAS_MAO) quantidadeAntes = MAX_CARTAS_MAO;
+    if (posicao < 0 || posicao >= quantidadeAntes) return;
+
+    /* Fotografa onde as cartas estao agora e tira a que saiu do meio; as da
+       direita herdam o x e a elevacao que tinham (o modulo jogador tambem
+       empurra as cartas para a esquerda ao tirar uma da mao). */
+    for (int i = 0; i < quantidadeAntes; i++) posicaoX[i] = x_atual_na_mao(i, quantidadeAntes);
+    for (int i = posicao; i < quantidadeAntes - 1; i++) {
+        posicaoX[i] = posicaoX[i + 1];
+        elevacao[i] = elevacao[i + 1];
+    }
+    elevacao[quantidadeAntes - 1] = 0.0f;
+    qtdPosicoes = quantidadeAntes - 1;
+}
+
+void desenho_mao_deslizar(int quantidade, float dt) {
+    /* Mesma aproximacao pelo tempo da elevacao: com 14, depois dos 0,35 s
+       do voo falta menos de 1% do caminho. */
+    float passo = 1.0f - expf(-DESENHO_MAO_SUAVIDADE * dt);
+
+    if (quantidade > MAX_CARTAS_MAO) quantidade = MAX_CARTAS_MAO;
+    if (quantidade != qtdPosicoes) {
+        for (int i = 0; i < quantidade; i++) posicaoX[i] = centro_x_na_mao(i, quantidade);
+        qtdPosicoes = quantidade;
+        return;
+    }
+    for (int i = 0; i < quantidade; i++) {
+        posicaoX[i] += (centro_x_na_mao(i, quantidade) - posicaoX[i]) * passo;
+    }
 }
 
 void desenho_mao(const Carta cartas[], int quantidade) {

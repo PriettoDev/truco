@@ -81,6 +81,15 @@ void desenho_voo(void);
 void desenho_mao_atualizar(int quantidade, Vector2 mouse, float dt);
 void desenho_mao(const Carta cartas[], int quantidade);
 
+/* Uma carta saiu da mao (chamar logo depois de desenho_voo_iniciar, que
+   ainda usa o lugar antigo dela). As outras guardam onde estavam. */
+void desenho_mao_retirar(int posicao, int quantidadeAntes);
+
+/* Uma vez por quadro, com a quantidade de cartas da mao que esta na tela:
+   as cartas restantes deslizam ate o lugar centralizado. Se a quantidade
+   mudou por outro motivo (mao nova, outro jogador), vao direto ao lugar. */
+void desenho_mao_deslizar(int quantidade, float dt);
+
 /* Mesma posicao da mao, mas so os versos: quando todos olham a tela
    (apuracao e telas de fim), ninguem pode ver as cartas de ninguem. */
 void desenho_mao_versos(int quantidade);

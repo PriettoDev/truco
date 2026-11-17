@@ -51,6 +51,7 @@ static void tratar_entrada(void) {
            ainda sao de antes da jogada). */
         if (clique && sob >= 0 && partida_jogar_carta(&partida, sob)) {
             desenho_voo_iniciar(partida.naMesa[partida.qtdNaMesa - 1].carta, sob, qtd, LADO_EU);
+            desenho_mao_retirar(sob, qtd);
         }
     } else if (clique || espaco) {
         partida_confirmar(&partida);
@@ -162,6 +163,9 @@ int main(void) {
         desenho_mao_atualizar(partida.estado == PARTIDA_VEZ_DO_JOGADOR ? qtdVez : 0, tela_mouse(), dt);
         hud_atualizar(tela_mouse(), dt, BOTOES_ATIVOS);
         desenho_voo_atualizar(dt);
+        /* A mao na tela e sempre a de quem a camera mostra (de frente ou
+           em versos): as que sobraram deslizam durante o voo. */
+        desenho_mao_deslizar(partida.mesa.jogadores[partida_assento_visto(&partida)].qtdCartas, dt);
 
         tela_comecar_desenho();
         desenhar_estado();
