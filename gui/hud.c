@@ -13,6 +13,7 @@ static const Color COR_TEXTO   = { 245, 236, 214, 255 };
 static const Color COR_NOS     = {  86, 186, 110, 255 };
 static const Color COR_ELES    = { 222,  88,  72, 255 };
 static const Color COR_EMPATE  = { 170, 170, 170, 255 };
+static const Color COR_DESATIVADO = { 92, 92, 92, 255 };
 
 /* Destaque atual de cada botao: 0 = normal, 1 = mouse em cima. */
 static float destaqueTruco, destaqueVar;
@@ -121,28 +122,36 @@ static void desenhar_cartas_fortes(const HudDados *d) {
 
 /* ---------------------------------------------------------------- botoes */
 
-static void desenhar_botao(Rectangle r, const char *rotulo, Color cor, float destaque, float tamanhoTexto) {
+static void desenhar_botao(Rectangle r, const char *rotulo, Color cor, float destaque, float tamanhoTexto,
+                           int ativo) {
     Font titulo = recurso_fonte(FONTE_TITULO);
     /* Destaque: cresce ate 5% a partir do centro e clareia a cor. */
     float escala = 1.0f + 0.05f * destaque;
     Rectangle e = { r.x + r.width * (1.0f - escala) * 0.5f, r.y + r.height * (1.0f - escala) * 0.5f,
                     r.width * escala, r.height * escala };
     Color fundo = ColorBrightness(cor, 0.25f * destaque);
+    /* Desativado: cinza e texto apagado, para ninguem achar que travou. */
+    Color corTexto = ativo ? COR_TEXTO : Fade(COR_TEXTO, 0.45f);
+    if (!ativo) fundo = COR_DESATIVADO;
 
     DrawRectangleRounded((Rectangle){ e.x + 4, e.y + 6, e.width, e.height }, 0.35f, 10, Fade(BLACK, 0.4f));
     DrawRectangleRounded(e, 0.35f, 10, fundo);
-    DrawRectangleRoundedLinesEx(e, 0.35f, 10, 3.0f, Fade(COR_TEXTO, 0.5f + 0.5f * destaque));
+    DrawRectangleRoundedLinesEx(e, 0.35f, 10, 3.0f, Fade(corTexto, 0.5f + 0.5f * destaque));
     texto_centro(titulo, rotulo, e.x + e.width * 0.5f,
-                 e.y + (e.height - tamanhoTexto) * 0.5f, tamanhoTexto * escala, COR_TEXTO);
+                 e.y + (e.height - tamanhoTexto) * 0.5f, tamanhoTexto * escala, corTexto);
 }
 
-HudAcao hud_atualizar(Vector2 mouse, float dt) {
+HudAcao hud_atualizar(Vector2 mouse, float dt, int botoesAtivos) {
     float passo = 1.0f - expf(-HUD_SUAVIDADE * dt);   /* igual em qualquer FPS */
-    int sobreTruco = CheckCollisionPointRec(mouse, HUD_BOTAO_TRUCO);
-    int sobreVar = CheckCollisionPointRec(mouse, HUD_BOTAO_VAR);
+    int sobreTruco = botoesAtivos && CheckCollisionPointRec(mouse, HUD_BOTAO_TRUCO);
+    int sobreVar = botoesAtivos && CheckCollisionPointRec(mouse, HUD_BOTAO_VAR);
 
     destaqueTruco += ((sobreTruco ? 1.0f : 0.0f) - destaqueTruco) * passo;
     destaqueVar += ((sobreVar ? 1.0f : 0.0f) - destaqueVar) * passo;
+
+    /* Desativados, o cursor fica com quem chamou (a mao do jogador tambem
+       usa a maozinha). */
+    if (!botoesAtivos) return HUD_NENHUMA;
 
     /* Mãozinha no cursor: deixa claro que da para clicar. */
     SetMouseCursor((sobreTruco || sobreVar) ? MOUSE_CURSOR_POINTING_HAND : MOUSE_CURSOR_DEFAULT);
@@ -154,9 +163,10 @@ HudAcao hud_atualizar(Vector2 mouse, float dt) {
     return HUD_NENHUMA;
 }
 
-void hud_desenhar(const HudDados *dados, int assentoVisto) {
+void hud_desenhar(const HudDados *dados, int assentoVisto, int botoesAtivos) {
     desenhar_placar(dados, assentoVisto);
     desenhar_cartas_fortes(dados);
-    desenhar_botao(HUD_BOTAO_TRUCO, "PEDIR TRUCO", (Color){ 190, 60, 30, 255 }, destaqueTruco, 44.0f);
-    desenhar_botao(HUD_BOTAO_VAR, "VAR", (Color){ 40, 70, 120, 255 }, destaqueVar, 38.0f);
+    desenhar_botao(HUD_BOTAO_TRUCO, "PEDIR TRUCO", (Color){ 190, 60, 30, 255 }, destaqueTruco, 44.0f,
+                   botoesAtivos);
+    desenhar_botao(HUD_BOTAO_VAR, "VAR", (Color){ 40, 70, 120, 255 }, destaqueVar, 38.0f, botoesAtivos);
 }

@@ -18,7 +18,7 @@
    parecer que esta na mao e nao em cima da mesa. */
 #define DESENHO_MAO_LARGURA_CARTA 200.0f
 #define DESENHO_MAO_ESPACO        230.0f   /* distancia entre os centros */
-#define DESENHO_MAO_TOPO          820.0f
+#define DESENHO_MAO_TOPO          840.0f   /* baixa o bastante para a cruz caber */
 #define DESENHO_MAO_ELEVACAO       60.0f   /* quanto a carta sobe com o mouse */
 #define DESENHO_MAO_SUAVIDADE      14.0f   /* maior = chega mais rapido */
 
@@ -34,20 +34,45 @@
 /* Versos diante dos outros 3 jogadores. "graus" e a rotacao do leque inteiro:
    cada jogador segura as cartas virado para o centro da mesa. */
 #define DESENHO_VERSO_LARGURA         80.0f
-#define DESENHO_VERSOS_FRENTE_CENTRO   ((Vector2){  960, 650 })
+#define DESENHO_VERSOS_FRENTE_CENTRO   ((Vector2){  960, 540 })   /* acima da cruz */
 #define DESENHO_VERSOS_FRENTE_GRAUS    180.0f
 #define DESENHO_VERSOS_ESQUERDA_CENTRO ((Vector2){  330, 790 })
 #define DESENHO_VERSOS_ESQUERDA_GRAUS   90.0f
 #define DESENHO_VERSOS_DIREITA_CENTRO  ((Vector2){ 1590, 790 })
 #define DESENHO_VERSOS_DIREITA_GRAUS   -90.0f
 
+/* Cartas jogadas: uma cruz no meio da mesa, cada carta na frente de quem a
+   jogou (embaixo = quem esta vendo). Menores que a mao para caberem entre os
+   versos do parceiro e a mao, e a esquerda da vira. */
+#define DESENHO_JOGADA_CENTRO       ((Vector2){ 960, 710 })
+#define DESENHO_JOGADA_LARGURA      64.0f
+#define DESENHO_JOGADA_AFASTAMENTO_V 56.0f   /* do centro ate a carta de baixo/de cima */
+#define DESENHO_JOGADA_AFASTAMENTO_H 85.0f   /* dos lados: sem cobrir o canto das outras */
+
+/* Lado da mesa em relacao a quem esta vendo: (assento - assentoVisto + 4) % 4. */
+typedef enum { LADO_EU, LADO_DIREITA, LADO_FRENTE, LADO_ESQUERDA } LadoDaMesa;
+
 /* Face de uma carta no retangulo dado (sem rotacao). */
 void desenho_carta_face(Carta carta, Rectangle area);
+
+/* Face girada em torno do centro (graus no sentido horario, como na raylib). */
+void desenho_carta_face_girada(Carta carta, Vector2 centro, float largura, float graus);
+
+/* Carta jogada, no lugar da cruz que corresponde ao lado de quem jogou. */
+void desenho_carta_jogada(Carta carta, LadoDaMesa lado);
+Rectangle desenho_area_cartas_jogadas(void);
 
 /* Mao do jogador: atualizar uma vez por quadro (anima a carta sob o mouse)
    e depois desenhar. mouse em coordenadas logicas, dt em segundos. */
 void desenho_mao_atualizar(int quantidade, Vector2 mouse, float dt);
 void desenho_mao(const Carta cartas[], int quantidade);
+
+/* Mesma posicao da mao, mas so os versos: quando todos olham a tela
+   (apuracao e telas de fim), ninguem pode ver as cartas de ninguem. */
+void desenho_mao_versos(int quantidade);
+
+/* Indice da carta da mao sob o mouse (mesma area do destaque), ou -1. */
+int desenho_mao_carta_sob(int quantidade, Vector2 mouse);
 
 void desenho_vira(Carta vira);
 void desenho_monte(void);

@@ -8,7 +8,9 @@
  *
  * Regras conferidas:
  *  - paineis do bar (clicaveis) nao ficam atras de personagem nem da mesa;
- *  - o HUD nao cobre a mao, a vira/monte, os rostos nem os paineis do bar.
+ *  - o HUD nao cobre a mao, a vira/monte, as cartas jogadas, os rostos nem
+ *    os paineis do bar;
+ *  - as cartas jogadas nao encostam na vira/monte.
  *
  * So avisa no terminal; nunca trava o jogo.
  */

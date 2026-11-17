@@ -1,21 +1,22 @@
 /*
  * main_gui.c - ponto de entrada da interface grafica do Truco no Bar do Pato.
  *
- * Os modulos de src/ continuam donos das regras. Este arquivo so abre a
- * janela e, nas proximas etapas, refaz o fluxo da partida como maquina de
- * estados (o fluxo do main.c le o teclado e por isso nao e reaproveitado).
+ * Os modulos de src/ continuam donos das regras e partida_gui.c e dono do
+ * fluxo (a maquina de estados). Este arquivo so le o mouse e o teclado,
+ * avisa a partida e desenha o estado que ela tem.
  */
 #include <stdlib.h>   /* srand */
 #include <time.h>     /* time */
 
 #include "raylib.h"
-#include "rodada.h"   /* EMPATE e INDEFINIDO nos dados de exemplo */
 #include "tela.h"
 #include "recursos.h"
 #include "cena.h"
 #include "desenho_cartas.h"
 #include "hud.h"
 #include "conferencia.h"
+#include "partida_gui.h"
+#include "telas_partida.h"
 
 /* Tamanho inicial pensado para caber em notebooks; o minimo e metade da
    resolucao logica, abaixo disso as cartas e textos ficam pequenos demais. */
@@ -24,41 +25,97 @@
 #define JANELA_LARGURA_MINIMA   960
 #define JANELA_ALTURA_MINIMA    540
 
-/* PROVISORIO (sai quando a mao vier do baralho de verdade): cartas fixas de
-   exemplo. Com a vira 2 de ouros a manilha e o 3, entao o 3 de paus e o zap,
-   o que ajuda a conferir o painel de cartas mais fortes no commit 6. */
-static const Carta maoExemplo[3] = { { PAUS, TRES }, { ESPADAS, AS }, { COPAS, SETE } };
-static const Carta viraExemplo = { OUROS, DOIS };
+/* Truco e VAR ainda nao existem nesta etapa: os botoes aparecem cinza. */
+#define BOTOES_ATIVOS 0
 
-/* PROVISORIO: dados de exemplo do HUD, na numeracao interna das duplas.
-   Dupla 0 venceu a 1a rodada, a 2a empatou, a 3a nao foi jogada. Trocando o
-   assento (teclas 1 a 4), "Nos" e "Eles" se invertem. */
-static const HudDados hudExemplo = {
-    { 5, 8 }, 3, { 0, EMPATE, INDEFINIDO }, { OUROS, DOIS }
-};
+/* static: a partida nunca pode ser copiada (ver partida_gui.h) e assim vive
+   o programa inteiro num lugar so. */
+static PartidaGui partida;
 
-/* PROVISORIO (some quando a maquina de estados escolher o assento): teclas
-   1 a 4 trocam o assento visto, para conferir a rotacao da mesa. */
-static int assentoVisto = 0;
+/* Cliques e ESPACO vao para a partida, que decide se aceita (travas). Uma
+   acao por quadro: o clique que tira a cobertura nao pode jogar uma carta
+   no mesmo quadro. */
+static void tratar_entrada(void) {
+    Vector2 mouse = tela_mouse();
+    int clique = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+    int espaco = IsKeyPressed(KEY_SPACE);
+    int vez = (partida.estado == PARTIDA_VEZ_DO_JOGADOR);
+    int qtd = partida.mesa.jogadores[partida.assentoDaVez].qtdCartas;
+    int sob = vez ? desenho_mao_carta_sob(qtd, mouse) : -1;
 
-static void tratar_teclas_provisorias(void) {
-    if (IsKeyPressed(KEY_ONE))   assentoVisto = 0;
-    if (IsKeyPressed(KEY_TWO))   assentoVisto = 1;
-    if (IsKeyPressed(KEY_THREE)) assentoVisto = 2;
-    if (IsKeyPressed(KEY_FOUR))  assentoVisto = 3;
+    /* Na vez, a mao do jogador e o que se clica; a maozinha mostra isso. */
+    SetMouseCursor(sob >= 0 ? MOUSE_CURSOR_POINTING_HAND : MOUSE_CURSOR_DEFAULT);
+
+    if (vez) {
+        if (clique && sob >= 0) partida_jogar_carta(&partida, sob);
+    } else if (clique || espaco) {
+        partida_confirmar(&partida);
+    }
 }
 
-/* PROVISORIO: mostra no canto de quem e a camera. Assentos internos (0 a 3),
-   os mesmos de Jogador.assento, para comparar direto com a regra p(s+1). */
-static void desenhar_assento_visto(void) {
-    Font fonte = recurso_fonte(FONTE_TEXTO);
-    const char *texto = TextFormat("Vista do assento %d (p%d) \u2014 teclas 1 a 4",
-                                   assentoVisto, cena_personagem_do_assento(assentoVisto));
-    Vector2 medida = MeasureTextEx(fonte, texto, 40.0f, 1.0f);
-    Rectangle fundo = { 24, TELA_ALTURA - medida.y - 48, medida.x + 32, medida.y + 24 };
+static HudDados dados_do_hud(void) {
+    HudDados d;
+    d.pontos[0] = partida_pontos(&partida, 0);
+    d.pontos[1] = partida_pontos(&partida, 1);
+    d.valorMao = partida.mao.aposta.valor;
+    for (int i = 0; i < 3; i++) d.resultados[i] = partida.mao.resultados[i];
+    d.vira = partida.mesa.vira;
+    return d;
+}
 
-    DrawRectangleRounded(fundo, 0.4f, 8, Fade(BLACK, 0.7f));
-    DrawTextEx(fonte, texto, (Vector2){ fundo.x + 16, fundo.y + 12 }, 40.0f, 1.0f, RAYWHITE);
+static void desenhar_mesa(void) {
+    int visto = partida_assento_visto(&partida);
+    int visivel = partida_mao_visivel(&partida);
+    const Jogador *j = partida.mesa.jogadores;
+    HudDados hud = dados_do_hud();
+
+    cena_desenhar(visto);                        /* camadas 1 a 4 */
+    desenho_versos_dos_outros(j[cena_assento_na_posicao(visto, POSICAO_DIREITA)].qtdCartas,
+                              j[cena_assento_na_posicao(visto, POSICAO_FRENTE)].qtdCartas,
+                              j[cena_assento_na_posicao(visto, POSICAO_ESQUERDA)].qtdCartas);
+    desenho_monte();
+    desenho_vira(partida.mesa.vira);
+
+    /* Cada carta fica do lado de quem a jogou, visto por quem esta na vez:
+       quando a camera troca de jogador, a cruz gira junto. */
+    for (int i = 0; i < partida.qtdNaMesa; i++) {
+        LadoDaMesa lado = (LadoDaMesa)((partida.naMesa[i].assento - visto + 4) % 4);
+        desenho_carta_jogada(partida.naMesa[i].carta, lado);
+    }
+
+    /* Camada 5. Privacidade: so quem esta na vez ve a propria mao; nas
+       outras telas todos olham, entao a mao aparece como versos. */
+    if (visivel >= 0) desenho_mao(j[visivel].mao, j[visivel].qtdCartas);
+    else desenho_mao_versos(j[visto].qtdCartas);
+
+    hud_desenhar(&hud, visto, BOTOES_ATIVOS);   /* camada 6 */
+}
+
+static void desenhar_estado(void) {
+    int visto = partida_assento_visto(&partida);
+
+    switch (partida.estado) {
+    case PARTIDA_INICIO_MAO:
+        /* Dura um quadro so (distribui e ja vai para a cobertura); a tela
+           fica coberta para a mao nova nunca aparecer descoberta. */
+        DrawRectangle(0, 0, TELA_LARGURA, TELA_ALTURA, BLACK);
+        break;
+    case PARTIDA_COBERTURA:
+        desenhar_mesa();
+        telas_cobertura(visto, partida_nome(visto), partida.tempoNoEstado, PARTIDA_TEMPO_TRAVA);
+        break;
+    case PARTIDA_FIM_MAO:
+        desenhar_mesa();
+        telas_aviso_provisorio("Fim da mão", "clique ou ESPAÇO para continuar");
+        break;
+    case PARTIDA_FIM_PARTIDA:
+        desenhar_mesa();
+        telas_aviso_provisorio("Fim da partida", "clique para jogar de novo");
+        break;
+    default:
+        desenhar_mesa();
+        break;
+    }
 }
 
 int main(void) {
@@ -79,27 +136,25 @@ int main(void) {
     tela_iniciar();
     recursos_carregar();
     conferir_posicoes();
+    partida_iniciar(&partida);
 
     while (!WindowShouldClose()) {
+        float dt = GetFrameTime();
+        int qtdVez;
+
         if (IsKeyPressed(KEY_F11)) tela_alternar_tela_cheia();
-        tratar_teclas_provisorias();
-        desenho_mao_atualizar(3, tela_mouse(), GetFrameTime());
-        switch (hud_atualizar(tela_mouse(), GetFrameTime())) {
-            /* PROVISORIO: so registra o clique; a maquina de estados da
-               proxima etapa e que vai pedir o truco e abrir o VAR. */
-            case HUD_PEDIR_TRUCO: TraceLog(LOG_INFO, "HUD: clicou em PEDIR TRUCO"); break;
-            case HUD_VAR:         TraceLog(LOG_INFO, "HUD: clicou em VAR"); break;
-            default: break;
-        }
+        tratar_entrada();
+        partida_atualizar(&partida, dt);
+
+        /* O destaque da mao so anda na vez; fora dela volta tudo ao lugar
+           (quantidade 0 zera), para o proximo jogador nao herdar uma carta
+           levantada. */
+        qtdVez = partida.mesa.jogadores[partida.assentoDaVez].qtdCartas;
+        desenho_mao_atualizar(partida.estado == PARTIDA_VEZ_DO_JOGADOR ? qtdVez : 0, tela_mouse(), dt);
+        hud_atualizar(tela_mouse(), dt, BOTOES_ATIVOS);
 
         tela_comecar_desenho();
-        cena_desenhar(assentoVisto);                 /* camadas 1 a 4 */
-        desenho_versos_dos_outros(3, 3, 3);          /* em cima da mesa */
-        desenho_monte();
-        desenho_vira(viraExemplo);
-        desenho_mao(maoExemplo, 3);                  /* camada 5 */
-        hud_desenhar(&hudExemplo, assentoVisto);     /* camada 6 */
-        desenhar_assento_visto();
+        desenhar_estado();
         tela_terminar_desenho();
     }
 

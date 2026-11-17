@@ -29,9 +29,11 @@ typedef struct {
     Carta vira;
 } HudDados;
 
-/* Anima o destaque dos botoes e devolve o botao clicado neste quadro. */
-HudAcao hud_atualizar(Vector2 mouse, float dt);
+/* Anima o destaque dos botoes e devolve o botao clicado neste quadro.
+   Com botoesAtivos = 0 (truco e VAR ainda nao existem) os botoes nao
+   destacam, nao mudam o cursor e nunca devolvem clique. */
+HudAcao hud_atualizar(Vector2 mouse, float dt, int botoesAtivos);
 
-void hud_desenhar(const HudDados *dados, int assentoVisto);
+void hud_desenhar(const HudDados *dados, int assentoVisto, int botoesAtivos);
 
 #endif

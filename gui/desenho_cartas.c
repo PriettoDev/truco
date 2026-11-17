@@ -2,6 +2,7 @@
 
 #include "desenho_cartas.h"
 #include "recursos.h"
+#include "rlgl.h"    /* matriz de rotacao para a face girada; depois do raylib.h */
 
 #define MAX_CARTAS_MAO 3
 
@@ -68,6 +69,45 @@ void desenho_carta_face(Carta carta, Rectangle area) {
                tamCentro, 0.0f, cor_do_naipe(carta.naipe));
 }
 
+void desenho_carta_face_girada(Carta carta, Vector2 centro, float largura, float graus) {
+    float altura = largura * DESENHO_CARTA_PROPORCAO;
+
+    /* Gira o sistema de coordenadas em vez de reescrever a face: a carta e
+       desenhada centrada na origem e a matriz leva para o lugar certo. Os
+       cantos ja sao simetricos (o de baixo e de ponta-cabeca), entao a carta
+       se le de qualquer lado da mesa, como um baralho de verdade. */
+    rlPushMatrix();
+    rlTranslatef(centro.x, centro.y, 0.0f);
+    rlRotatef(graus, 0.0f, 0.0f, 1.0f);
+    desenho_carta_face(carta, (Rectangle){ -largura * 0.5f, -altura * 0.5f, largura, altura });
+    rlPopMatrix();
+}
+
+void desenho_carta_jogada(Carta carta, LadoDaMesa lado) {
+    Vector2 c = DESENHO_JOGADA_CENTRO;
+    float graus = 0.0f;
+
+    /* Mesma rotacao dos versos de cada lado: a carta fica "de frente" para
+       quem a jogou. */
+    switch (lado) {
+    case LADO_EU:       c.y += DESENHO_JOGADA_AFASTAMENTO_V; break;
+    case LADO_FRENTE:   c.y -= DESENHO_JOGADA_AFASTAMENTO_V; graus = DESENHO_VERSOS_FRENTE_GRAUS; break;
+    case LADO_ESQUERDA: c.x -= DESENHO_JOGADA_AFASTAMENTO_H; graus = DESENHO_VERSOS_ESQUERDA_GRAUS; break;
+    case LADO_DIREITA:  c.x += DESENHO_JOGADA_AFASTAMENTO_H; graus = DESENHO_VERSOS_DIREITA_GRAUS; break;
+    }
+    desenho_carta_face_girada(carta, c, DESENHO_JOGADA_LARGURA, graus);
+}
+
+Rectangle desenho_area_cartas_jogadas(void) {
+    /* A carta deitada (lados) ocupa a altura na horizontal: por isso a meia
+       altura entra nas duas direcoes. */
+    float meiaAltura = DESENHO_JOGADA_LARGURA * DESENHO_CARTA_PROPORCAO * 0.5f;
+    Vector2 c = DESENHO_JOGADA_CENTRO;
+    float dx = DESENHO_JOGADA_AFASTAMENTO_H + meiaAltura;
+    float dy = DESENHO_JOGADA_AFASTAMENTO_V + meiaAltura;
+    return (Rectangle){ c.x - dx, c.y - dy, 2.0f * dx, 2.0f * dy };
+}
+
 static float centro_x_na_mao(int i, int quantidade) {
     /* Centraliza qualquer quantidade (3, 2 ou 1 carta) no meio da tela. */
     return 960.0f + ((float)i - (quantidade - 1) * 0.5f) * DESENHO_MAO_ESPACO;
@@ -106,6 +146,23 @@ void desenho_mao(const Carta cartas[], int quantidade) {
     for (int i = 0; i < quantidade; i++) {
         desenho_carta_face(cartas[i], area_na_mao(i, quantidade));
     }
+}
+
+void desenho_mao_versos(int quantidade) {
+    if (quantidade > MAX_CARTAS_MAO) quantidade = MAX_CARTAS_MAO;
+    for (int i = 0; i < quantidade; i++) {
+        recurso_desenhar(REC_UI_VERSO_CARTA, area_na_mao(i, quantidade), 0, WHITE);
+    }
+}
+
+int desenho_mao_carta_sob(int quantidade, Vector2 mouse) {
+    if (quantidade > MAX_CARTAS_MAO) quantidade = MAX_CARTAS_MAO;
+    for (int i = 0; i < quantidade; i++) {
+        Rectangle area = area_na_mao(i, quantidade);
+        area.height += elevacao[i];   /* igual ao destaque: sem buraco embaixo */
+        if (CheckCollisionPointRec(mouse, area)) return i;
+    }
+    return -1;
 }
 
 void desenho_vira(Carta vira) {

@@ -51,6 +51,7 @@ int conferir_posicoes(void) {
     const Area protegidas[] = {
         { desenho_area_mao(3), "mao do jogador" },
         { desenho_area_vira_e_monte(), "vira e monte" },
+        { desenho_area_cartas_jogadas(), "cartas jogadas" },
         { CENA_ROSTO_ESQUERDA, "rosto da esquerda" },
         { CENA_ROSTO_FRENTE, "rosto da frente" },
         { CENA_ROSTO_DIREITA, "rosto da direita" },
@@ -59,10 +60,14 @@ int conferir_posicoes(void) {
         { CENA_PAINEL_TV_VAR, "painel tv_var" },
         { CENA_PAINEL_CADERNETA, "painel caderneta" },
     };
+    /* As cartas jogadas tambem nao podem ficar por baixo da vira e do monte. */
+    const Area cruz[] = { { desenho_area_cartas_jogadas(), "cartas jogadas" } };
+    const Area viraMonte[] = { { desenho_area_vira_e_monte(), "vira e monte" } };
     int achou = 0;
 
     achou += cruzar(paineis, QTD(paineis), corposEMesa, QTD(corposEMesa), "fica atras do");
     achou += cruzar(hud, QTD(hud), protegidas, QTD(protegidas), "cobre");
+    achou += cruzar(cruz, QTD(cruz), viraMonte, QTD(viraMonte), "encosta em");
     if (achou == 0) TraceLog(LOG_INFO, "CONFERENCIA: nenhuma area de tela se sobrepoe");
     return achou == 0;
 }
