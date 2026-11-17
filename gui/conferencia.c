@@ -60,14 +60,18 @@ int conferir_posicoes(void) {
         { CENA_PAINEL_TV_VAR, "painel tv_var" },
         { CENA_PAINEL_CADERNETA, "painel caderneta" },
     };
-    /* As cartas jogadas tambem nao podem ficar por baixo da vira e do monte. */
+    /* As cartas jogadas tambem nao podem encostar na vira/monte nem nos versos
+       do parceiro, que ficam logo acima. */
     const Area cruz[] = { { desenho_area_cartas_jogadas(), "cartas jogadas" } };
-    const Area viraMonte[] = { { desenho_area_vira_e_monte(), "vira e monte" } };
+    const Area vizinhosDaCruz[] = {
+        { desenho_area_vira_e_monte(), "vira e monte" },
+        { desenho_area_versos_frente(), "versos do parceiro" },
+    };
     int achou = 0;
 
     achou += cruzar(paineis, QTD(paineis), corposEMesa, QTD(corposEMesa), "fica atras do");
     achou += cruzar(hud, QTD(hud), protegidas, QTD(protegidas), "cobre");
-    achou += cruzar(cruz, QTD(cruz), viraMonte, QTD(viraMonte), "encosta em");
+    achou += cruzar(cruz, QTD(cruz), vizinhosDaCruz, QTD(vizinhosDaCruz), "encosta em");
     if (achou == 0) TraceLog(LOG_INFO, "CONFERENCIA: nenhuma area de tela se sobrepoe");
     return achou == 0;
 }

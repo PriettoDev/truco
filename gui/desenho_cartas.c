@@ -83,18 +83,26 @@ void desenho_carta_face_girada(Carta carta, Vector2 centro, float largura, float
     rlPopMatrix();
 }
 
-void desenho_carta_jogada(Carta carta, LadoDaMesa lado) {
+/* Centro e rotacao de cada lugar da cruz. Mesma rotacao dos versos de cada
+   lado: a carta fica "de frente" para quem a jogou. */
+static void lugar_na_cruz(LadoDaMesa lado, Vector2 *centro, float *graus) {
     Vector2 c = DESENHO_JOGADA_CENTRO;
-    float graus = 0.0f;
+    float g = 0.0f;
 
-    /* Mesma rotacao dos versos de cada lado: a carta fica "de frente" para
-       quem a jogou. */
     switch (lado) {
     case LADO_EU:       c.y += DESENHO_JOGADA_AFASTAMENTO_V; break;
-    case LADO_FRENTE:   c.y -= DESENHO_JOGADA_AFASTAMENTO_V; graus = DESENHO_VERSOS_FRENTE_GRAUS; break;
-    case LADO_ESQUERDA: c.x -= DESENHO_JOGADA_AFASTAMENTO_H; graus = DESENHO_VERSOS_ESQUERDA_GRAUS; break;
-    case LADO_DIREITA:  c.x += DESENHO_JOGADA_AFASTAMENTO_H; graus = DESENHO_VERSOS_DIREITA_GRAUS; break;
+    case LADO_FRENTE:   c.y -= DESENHO_JOGADA_AFASTAMENTO_V; g = DESENHO_VERSOS_FRENTE_GRAUS; break;
+    case LADO_ESQUERDA: c.x -= DESENHO_JOGADA_AFASTAMENTO_H; g = DESENHO_VERSOS_ESQUERDA_GRAUS; break;
+    case LADO_DIREITA:  c.x += DESENHO_JOGADA_AFASTAMENTO_H; g = DESENHO_VERSOS_DIREITA_GRAUS; break;
     }
+    *centro = c;
+    *graus = g;
+}
+
+void desenho_carta_jogada(Carta carta, LadoDaMesa lado) {
+    Vector2 c;
+    float graus;
+    lugar_na_cruz(lado, &c, &graus);
     desenho_carta_face_girada(carta, c, DESENHO_JOGADA_LARGURA, graus);
 }
 
@@ -106,6 +114,44 @@ Rectangle desenho_area_cartas_jogadas(void) {
     float dx = DESENHO_JOGADA_AFASTAMENTO_H + meiaAltura;
     float dy = DESENHO_JOGADA_AFASTAMENTO_V + meiaAltura;
     return (Rectangle){ c.x - dx, c.y - dy, 2.0f * dx, 2.0f * dy };
+}
+
+/* Carta em voo: onde esta agora e para onde vai. */
+static struct {
+    int ativo;
+    Carta carta;
+    Vector2 centro, centroAlvo;
+    float largura, larguraAlvo;
+    float graus, grausAlvo;
+} voo;
+
+static Rectangle area_na_mao(int i, int quantidade);
+
+void desenho_voo_iniciar(Carta carta, int posicaoNaMao, int quantidadeNaMao, LadoDaMesa destino) {
+    Rectangle origem = area_na_mao(posicaoNaMao, quantidadeNaMao);
+
+    /* Sai de onde a carta estava desenhada (com a elevacao do mouse), para
+       nao dar salto no primeiro quadro. */
+    voo.ativo = 1;
+    voo.carta = carta;
+    voo.centro = (Vector2){ origem.x + origem.width * 0.5f, origem.y + origem.height * 0.5f };
+    voo.largura = origem.width;
+    voo.graus = 0.0f;
+    lugar_na_cruz(destino, &voo.centroAlvo, &voo.grausAlvo);
+    voo.larguraAlvo = DESENHO_JOGADA_LARGURA;
+}
+
+void desenho_voo_atualizar(float dt) {
+    float passo = 1.0f - expf(-DESENHO_VOO_SUAVIDADE * dt);
+    if (!voo.ativo) return;
+    voo.centro.x += (voo.centroAlvo.x - voo.centro.x) * passo;
+    voo.centro.y += (voo.centroAlvo.y - voo.centro.y) * passo;
+    voo.largura += (voo.larguraAlvo - voo.largura) * passo;
+    voo.graus += (voo.grausAlvo - voo.graus) * passo;
+}
+
+void desenho_voo(void) {
+    if (voo.ativo) desenho_carta_face_girada(voo.carta, voo.centro, voo.largura, voo.graus);
 }
 
 static float centro_x_na_mao(int i, int quantidade) {
@@ -216,6 +262,13 @@ Rectangle desenho_area_vira_e_monte(void) {
     /* Inclui o rotulo "VIRA" embaixo da carta (uns 40 px). */
     return (Rectangle){ esquerda, DESENHO_VIRA_CENTRO.y - altura * 0.5f,
                         direita - esquerda, altura + extra + 40.0f };
+}
+
+Rectangle desenho_area_versos_frente(void) {
+    /* Carta de 80x120 inclinada ate 9 graus: meia altura 60*cos9 + 40*sin9
+       (66) e meia largura do leque 0,55*80 + 66 (110). */
+    Vector2 c = DESENHO_VERSOS_FRENTE_CENTRO;
+    return (Rectangle){ c.x - 110.0f, c.y - 66.0f, 220.0f, 132.0f };
 }
 
 /* Leque de versos: cada carta um pouco deslocada e inclinada em relacao ao

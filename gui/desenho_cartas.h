@@ -34,7 +34,7 @@
 /* Versos diante dos outros 3 jogadores. "graus" e a rotacao do leque inteiro:
    cada jogador segura as cartas virado para o centro da mesa. */
 #define DESENHO_VERSO_LARGURA         80.0f
-#define DESENHO_VERSOS_FRENTE_CENTRO   ((Vector2){  960, 540 })   /* acima da cruz */
+#define DESENHO_VERSOS_FRENTE_CENTRO   ((Vector2){  960, 530 })   /* acima da cruz */
 #define DESENHO_VERSOS_FRENTE_GRAUS    180.0f
 #define DESENHO_VERSOS_ESQUERDA_CENTRO ((Vector2){  330, 790 })
 #define DESENHO_VERSOS_ESQUERDA_GRAUS   90.0f
@@ -42,12 +42,20 @@
 #define DESENHO_VERSOS_DIREITA_GRAUS   -90.0f
 
 /* Cartas jogadas: uma cruz no meio da mesa, cada carta na frente de quem a
-   jogou (embaixo = quem esta vendo). Menores que a mao para caberem entre os
-   versos do parceiro e a mao, e a esquerda da vira. */
-#define DESENHO_JOGADA_CENTRO       ((Vector2){ 960, 710 })
-#define DESENHO_JOGADA_LARGURA      64.0f
-#define DESENHO_JOGADA_AFASTAMENTO_V 56.0f   /* do centro ate a carta de baixo/de cima */
-#define DESENHO_JOGADA_AFASTAMENTO_H 85.0f   /* dos lados: sem cobrir o canto das outras */
+   jogou (embaixo = quem esta vendo). O tamanho e o maior que cabe entre os
+   versos do parceiro (embaixo em y 596) e a mao em repouso (y 840): quando
+   a sua carta esta na mesa, a sua mao nunca esta levantada. Os lados ficam
+   afastados o bastante para nao cobrir o canto das outras, e por isso a
+   cruz fica um pouco a esquerda: assim nao encosta na vira (x 1100). */
+#define DESENHO_JOGADA_CENTRO        ((Vector2){ 940, 722 })
+#define DESENHO_JOGADA_LARGURA       76.0f
+#define DESENHO_JOGADA_AFASTAMENTO_V 59.0f    /* do centro ate a carta de baixo/de cima */
+#define DESENHO_JOGADA_AFASTAMENTO_H 100.0f   /* dos lados: sem cobrir o canto das outras */
+
+/* Voo da carta da mao ate a mesa. Aproximacao exponencial pelo tempo, igual
+   a da mao: com 12, depois de 0,35 s (PARTIDA_TEMPO_VOO) falta menos de 2%
+   do caminho, e o resto some quando a carta assenta na cruz. */
+#define DESENHO_VOO_SUAVIDADE 12.0f
 
 /* Lado da mesa em relacao a quem esta vendo: (assento - assentoVisto + 4) % 4. */
 typedef enum { LADO_EU, LADO_DIREITA, LADO_FRENTE, LADO_ESQUERDA } LadoDaMesa;
@@ -61,6 +69,12 @@ void desenho_carta_face_girada(Carta carta, Vector2 centro, float largura, float
 /* Carta jogada, no lugar da cruz que corresponde ao lado de quem jogou. */
 void desenho_carta_jogada(Carta carta, LadoDaMesa lado);
 Rectangle desenho_area_cartas_jogadas(void);
+
+/* Voo: comeca no lugar exato da carta na mao (levantada ou nao) e vai ate
+   o lugar dela na cruz. So desenha; quem decide quanto dura e a partida. */
+void desenho_voo_iniciar(Carta carta, int posicaoNaMao, int quantidadeNaMao, LadoDaMesa destino);
+void desenho_voo_atualizar(float dt);
+void desenho_voo(void);
 
 /* Mao do jogador: atualizar uma vez por quadro (anima a carta sob o mouse)
    e depois desenhar. mouse em coordenadas logicas, dt em segundos. */
@@ -81,6 +95,7 @@ void desenho_monte(void);
    a mao inteira, incluindo a altura da carta levantada, e vira + monte. */
 Rectangle desenho_area_mao(int quantidade);
 Rectangle desenho_area_vira_e_monte(void);
+Rectangle desenho_area_versos_frente(void);   /* leque do parceiro, inteiro */
 
 /* Versos diante de cada um dos outros 3 jogadores (0 a 3 cartas cada). */
 void desenho_versos_dos_outros(int qtdDireita, int qtdFrente, int qtdEsquerda);

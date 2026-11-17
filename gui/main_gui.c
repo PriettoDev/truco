@@ -47,7 +47,11 @@ static void tratar_entrada(void) {
     SetMouseCursor(sob >= 0 ? MOUSE_CURSOR_POINTING_HAND : MOUSE_CURSOR_DEFAULT);
 
     if (vez) {
-        if (clique && sob >= 0) partida_jogar_carta(&partida, sob);
+        /* O voo parte do lugar da carta na mao ANTES de ela sair (qtd e sob
+           ainda sao de antes da jogada). */
+        if (clique && sob >= 0 && partida_jogar_carta(&partida, sob)) {
+            desenho_voo_iniciar(partida.naMesa[partida.qtdNaMesa - 1].carta, sob, qtd, LADO_EU);
+        }
     } else if (clique || espaco) {
         partida_confirmar(&partida);
     }
@@ -68,6 +72,7 @@ static void desenhar_mesa(void) {
     int visivel = partida_mao_visivel(&partida);
     const Jogador *j = partida.mesa.jogadores;
     HudDados hud = dados_do_hud();
+    int voando = (partida.estado == PARTIDA_CARTA_VOANDO);
 
     cena_desenhar(visto);                        /* camadas 1 a 4 */
     desenho_versos_dos_outros(j[cena_assento_na_posicao(visto, POSICAO_DIREITA)].qtdCartas,
@@ -77,8 +82,9 @@ static void desenhar_mesa(void) {
     desenho_vira(partida.mesa.vira);
 
     /* Cada carta fica do lado de quem a jogou, visto por quem esta na vez:
-       quando a camera troca de jogador, a cruz gira junto. */
-    for (int i = 0; i < partida.qtdNaMesa; i++) {
+       quando a camera troca de jogador, a cruz gira junto. Durante o voo a
+       ultima carta ainda nao chegou: ela e desenhada pelo voo, por cima. */
+    for (int i = 0; i < partida.qtdNaMesa - (voando ? 1 : 0); i++) {
         LadoDaMesa lado = (LadoDaMesa)((partida.naMesa[i].assento - visto + 4) % 4);
         desenho_carta_jogada(partida.naMesa[i].carta, lado);
     }
@@ -87,6 +93,9 @@ static void desenhar_mesa(void) {
        outras telas todos olham, entao a mao aparece como versos. */
     if (visivel >= 0) desenho_mao(j[visivel].mao, j[visivel].qtdCartas);
     else desenho_mao_versos(j[visto].qtdCartas);
+
+    /* Depois da mao: a carta sai de dentro dela e passa por cima. */
+    if (voando) desenho_voo();
 
     hud_desenhar(&hud, visto, BOTOES_ATIVOS);   /* camada 6 */
 }
@@ -152,6 +161,7 @@ int main(void) {
         qtdVez = partida.mesa.jogadores[partida.assentoDaVez].qtdCartas;
         desenho_mao_atualizar(partida.estado == PARTIDA_VEZ_DO_JOGADOR ? qtdVez : 0, tela_mouse(), dt);
         hud_atualizar(tela_mouse(), dt, BOTOES_ATIVOS);
+        desenho_voo_atualizar(dt);
 
         tela_comecar_desenho();
         desenhar_estado();
