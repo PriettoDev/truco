@@ -22,9 +22,14 @@
 #define DESENHO_MAO_ELEVACAO       60.0f   /* quanto a carta sobe com o mouse */
 #define DESENHO_MAO_SUAVIDADE      14.0f   /* maior = chega mais rapido */
 
-/* Vira: a direita do centro, deixando o meio livre para as cartas jogadas. */
-#define DESENHO_VIRA_CENTRO  ((Vector2){ 1340, 680 })
-#define DESENHO_VIRA_LARGURA 110.0f
+/* Monte e vira lado a lado, a direita do centro: no truco paulista a vira
+   sai do monte e fica junto dele, e o meio da mesa fica livre para as cartas
+   jogadas. A borda direita do monte (x 1319) fica uns 40 px antes da caixa
+   do personagem da direita (x 1360). */
+#define DESENHO_VIRA_CENTRO   ((Vector2){ 1150, 680 })
+#define DESENHO_VIRA_LARGURA  100.0f
+#define DESENHO_MONTE_CENTRO  ((Vector2){ 1260, 680 })
+#define DESENHO_MONTE_CAMADAS 4        /* versos empilhados para dar volume */
 
 /* Versos diante dos outros 3 jogadores. "graus" e a rotacao do leque inteiro:
    cada jogador segura as cartas virado para o centro da mesa. */
@@ -45,6 +50,12 @@ void desenho_mao_atualizar(int quantidade, Vector2 mouse, float dt);
 void desenho_mao(const Carta cartas[], int quantidade);
 
 void desenho_vira(Carta vira);
+void desenho_monte(void);
+
+/* Areas que a interface nunca pode cobrir (usadas na conferencia do inicio):
+   a mao inteira, incluindo a altura da carta levantada, e vira + monte. */
+Rectangle desenho_area_mao(int quantidade);
+Rectangle desenho_area_vira_e_monte(void);
 
 /* Versos diante de cada um dos outros 3 jogadores (0 a 3 cartas cada). */
 void desenho_versos_dos_outros(int qtdDireita, int qtdFrente, int qtdEsquerda);

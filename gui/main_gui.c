@@ -9,10 +9,13 @@
 #include <time.h>     /* time */
 
 #include "raylib.h"
+#include "rodada.h"   /* EMPATE e INDEFINIDO nos dados de exemplo */
 #include "tela.h"
 #include "recursos.h"
 #include "cena.h"
 #include "desenho_cartas.h"
+#include "hud.h"
+#include "conferencia.h"
 
 /* Tamanho inicial pensado para caber em notebooks; o minimo e metade da
    resolucao logica, abaixo disso as cartas e textos ficam pequenos demais. */
@@ -26,6 +29,13 @@
    o que ajuda a conferir o painel de cartas mais fortes no commit 6. */
 static const Carta maoExemplo[3] = { { PAUS, TRES }, { ESPADAS, AS }, { COPAS, SETE } };
 static const Carta viraExemplo = { OUROS, DOIS };
+
+/* PROVISORIO: dados de exemplo do HUD, na numeracao interna das duplas.
+   Dupla 0 venceu a 1a rodada, a 2a empatou, a 3a nao foi jogada. Trocando o
+   assento (teclas 1 a 4), "Nos" e "Eles" se invertem. */
+static const HudDados hudExemplo = {
+    { 5, 8 }, 3, { 0, EMPATE, INDEFINIDO }, { OUROS, DOIS }
+};
 
 /* PROVISORIO (some quando a maquina de estados escolher o assento): teclas
    1 a 4 trocam o assento visto, para conferir a rotacao da mesa. */
@@ -68,18 +78,27 @@ int main(void) {
 
     tela_iniciar();
     recursos_carregar();
-    cena_conferir_posicoes();
+    conferir_posicoes();
 
     while (!WindowShouldClose()) {
         if (IsKeyPressed(KEY_F11)) tela_alternar_tela_cheia();
         tratar_teclas_provisorias();
         desenho_mao_atualizar(3, tela_mouse(), GetFrameTime());
+        switch (hud_atualizar(tela_mouse(), GetFrameTime())) {
+            /* PROVISORIO: so registra o clique; a maquina de estados da
+               proxima etapa e que vai pedir o truco e abrir o VAR. */
+            case HUD_PEDIR_TRUCO: TraceLog(LOG_INFO, "HUD: clicou em PEDIR TRUCO"); break;
+            case HUD_VAR:         TraceLog(LOG_INFO, "HUD: clicou em VAR"); break;
+            default: break;
+        }
 
         tela_comecar_desenho();
         cena_desenhar(assentoVisto);                 /* camadas 1 a 4 */
         desenho_versos_dos_outros(3, 3, 3);          /* em cima da mesa */
+        desenho_monte();
         desenho_vira(viraExemplo);
         desenho_mao(maoExemplo, 3);                  /* camada 5 */
+        hud_desenhar(&hudExemplo, assentoVisto);     /* camada 6 */
         desenhar_assento_visto();
         tela_terminar_desenho();
     }

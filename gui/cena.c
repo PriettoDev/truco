@@ -109,30 +109,6 @@ static void desenhar_mesa(void) {
     recurso_desenhar(REC_FUNDO_MESA, CENA_MESA, 0, WHITE);
 }
 
-int cena_conferir_posicoes(void) {
-    const Rectangle paineis[] = { CENA_PAINEL_LOUSA, CENA_PAINEL_MURAL,
-                                  CENA_PAINEL_TV_VAR, CENA_PAINEL_CADERNETA };
-    const char *nomesPaineis[] = { "lousa", "mural", "tv_var", "caderneta" };
-    const Rectangle obstaculos[] = { CENA_PERSONAGEM_ESQUERDA, CENA_PERSONAGEM_FRENTE,
-                                     CENA_PERSONAGEM_DIREITA, CENA_MESA };
-    const char *nomesObstaculos[] = { "personagem da esquerda", "personagem da frente",
-                                      "personagem da direita", "mesa" };
-    int livre = 1;
-
-    /* Compara com a caixa inteira do personagem, e nao com a imagem: a arte
-       pode ocupar a caixa toda, e o painel tem que continuar clicavel. */
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            if (CheckCollisionRecs(paineis[i], obstaculos[j])) {
-                TraceLog(LOG_WARNING, "CENA: painel %s fica atras do %s (ajuste cena.h)",
-                         nomesPaineis[i], nomesObstaculos[j]);
-                livre = 0;
-            }
-        }
-    }
-    return livre;
-}
-
 void cena_desenhar(int assentoVisto) {
     desenhar_panorama();
     desenhar_paineis();

@@ -24,8 +24,9 @@
 /* Paineis: areas sobre objetos ja pintados no panorama. Medidas com o
    panorama centralizado; quando houver paralaxe, andam junto com ele.
    REGRA: os quatro serao clicaveis, entao nenhum pode ficar atras de
-   personagem nem da mesa. cena_conferir_posicoes() avisa no terminal se
-   algum ajuste quebrar isso. Posicoes provisorias: as finais vem com a arte. */
+   personagem nem da mesa. conferir_posicoes() (conferencia.c) avisa no
+   terminal se algum ajuste quebrar isso. Posicoes provisorias: as finais
+   vem com a arte. */
 #define CENA_PAINEL_LOUSA      ((Rectangle){  60,  50, 380, 230 })   /* placar  */
 #define CENA_PAINEL_MURAL      ((Rectangle){ 470,  80, 260, 190 })   /* ranking */
 #define CENA_PAINEL_TV_VAR     ((Rectangle){1160,  60, 290, 190 })   /* VAR     */
@@ -37,6 +38,13 @@
 #define CENA_PERSONAGEM_ESQUERDA ((Rectangle){  40, 300, 520, 760 })
 #define CENA_PERSONAGEM_FRENTE   ((Rectangle){ 760, 170, 400, 580 })
 #define CENA_PERSONAGEM_DIREITA  ((Rectangle){1360, 300, 520, 760 })
+
+/* Rostos: parte de cima de cada caixa, onde a cabeca deve ficar. Nada da
+   interface pode cobrir essas areas (a conferencia do inicio verifica).
+   PROVISORIO: ajustar quando a arte dos personagens chegar. */
+#define CENA_ROSTO_ESQUERDA ((Rectangle){  40, 300, 520, 230 })
+#define CENA_ROSTO_FRENTE   ((Rectangle){ 760, 170, 400, 180 })
+#define CENA_ROSTO_DIREITA  ((Rectangle){1360, 300, 520, 230 })
 
 /* Mesa: tampo ocupando a parte de baixo; o centro recebe a vira e as cartas
    jogadas, e a mao do jogador fica por cima, na borda de baixo. */
@@ -51,10 +59,6 @@ int cena_assento_na_posicao(int assentoVisto, PosicaoNaTela posicao);
 
 /* O jogador do assento s (0 a 3) usa o personagem p(s+1). */
 int cena_personagem_do_assento(int assento);
-
-/* Avisa no terminal (sem travar) se algum painel encosta em personagem ou
-   na mesa. Chamar uma vez no inicio. Devolve 1 se esta tudo livre. */
-int cena_conferir_posicoes(void);
 
 /* Desenha as quatro camadas do fundo na vista do jogador assentoVisto. */
 void cena_desenhar(int assentoVisto);

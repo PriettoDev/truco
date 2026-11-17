@@ -122,6 +122,45 @@ void desenho_vira(Carta vira) {
                30.0f, 1.0f, RAYWHITE);
 }
 
+void desenho_monte(void) {
+    Vector2 tamanho = { DESENHO_VIRA_LARGURA, DESENHO_VIRA_LARGURA * DESENHO_CARTA_PROPORCAO };
+
+    /* Cada camada um pouco para cima e para a esquerda: parece uma pilha
+       vista de cima, sem precisar de imagem de monte. */
+    for (int i = 0; i < DESENHO_MONTE_CAMADAS; i++) {
+        float d = (float)(DESENHO_MONTE_CAMADAS - 1 - i) * 3.0f;
+        recurso_desenhar_girado(REC_UI_VERSO_CARTA,
+                                (Vector2){ DESENHO_MONTE_CENTRO.x + d, DESENHO_MONTE_CENTRO.y + d },
+                                tamanho, 0.0f, WHITE);
+    }
+}
+
+Rectangle desenho_area_mao(int quantidade) {
+    float altura = DESENHO_MAO_LARGURA_CARTA * DESENHO_CARTA_PROPORCAO;
+    float esquerda, direita;
+
+    if (quantidade < 1) return (Rectangle){ 0, 0, 0, 0 };
+    if (quantidade > MAX_CARTAS_MAO) quantidade = MAX_CARTAS_MAO;
+    esquerda = centro_x_na_mao(0, quantidade) - DESENHO_MAO_LARGURA_CARTA * 0.5f;
+    direita = centro_x_na_mao(quantidade - 1, quantidade) + DESENHO_MAO_LARGURA_CARTA * 0.5f;
+    /* Comeca na altura da carta levantada ao maximo: a area protegida vale
+       em qualquer momento da animacao. */
+    return (Rectangle){ esquerda, DESENHO_MAO_TOPO - DESENHO_MAO_ELEVACAO,
+                        direita - esquerda, DESENHO_MAO_ELEVACAO + altura };
+}
+
+Rectangle desenho_area_vira_e_monte(void) {
+    float altura = DESENHO_VIRA_LARGURA * DESENHO_CARTA_PROPORCAO;
+    float esquerda = DESENHO_VIRA_CENTRO.x - DESENHO_VIRA_LARGURA * 0.5f;
+    /* O monte se espalha ate (camadas-1)*3 px para a direita e para baixo. */
+    float extra = (DESENHO_MONTE_CAMADAS - 1) * 3.0f;
+    float direita = DESENHO_MONTE_CENTRO.x + DESENHO_VIRA_LARGURA * 0.5f + extra;
+
+    /* Inclui o rotulo "VIRA" embaixo da carta (uns 40 px). */
+    return (Rectangle){ esquerda, DESENHO_VIRA_CENTRO.y - altura * 0.5f,
+                        direita - esquerda, altura + extra + 40.0f };
+}
+
 /* Leque de versos: cada carta um pouco deslocada e inclinada em relacao ao
    centro, e o leque inteiro girado para o lado de quem segura. */
 static void desenhar_leque(int quantidade, Vector2 centro, float grausLeque) {
