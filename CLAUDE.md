@@ -69,6 +69,9 @@ A apresentação será provavelmente em Windows; o desenvolvimento é em macOS.
   quadrante antes de olhar.
 
 ## Decisões de jogabilidade
+- Valor da mão: a sequência vem do aposta.c (hoje 1, 3, 6, 12; sem o 9). O
+  HUD só exibe aposta.valor e não assume valores fixos. Regra a confirmar
+  com o time; não alterar src/ por conta disso.
 - somarPontos: refeito no main_gui.c (é static no main.c), marcado com o
   comentário "TEMPORARIO: substituir pela funcao publica do modulo de partida
   (Pessoa 1)". Não alterar src/.
