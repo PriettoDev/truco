@@ -2,6 +2,7 @@
 #include "cena.h"
 #include "desenho_cartas.h"
 #include "hud.h"
+#include "telas_partida.h"
 
 typedef struct {
     Rectangle area;
@@ -47,6 +48,7 @@ int conferir_posicoes(void) {
         { HUD_CARTAS_FORTES, "HUD cartas mais fortes" },
         { HUD_BOTAO_TRUCO, "botao PEDIR TRUCO" },
         { HUD_BOTAO_VAR, "botao VAR" },
+        { TELAS_RESULTADO_RODADA, "plaquinha da rodada" },
     };
     const Area protegidas[] = {
         { desenho_area_mao(3), "mao do jogador" },

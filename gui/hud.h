@@ -18,6 +18,12 @@
 #define HUD_BOTAO_TRUCO    ((Rectangle){ 1580, 886, 316,  86 })
 #define HUD_BOTAO_VAR      ((Rectangle){ 1580, 986, 316,  70 })
 
+/* Cores de "Nos", "Eles" e empate, do ponto de vista de quem esta vendo.
+   Ficam aqui porque as telas de apuracao usam as mesmas do placar. */
+#define HUD_COR_NOS    ((Color){  86, 186, 110, 255 })
+#define HUD_COR_ELES   ((Color){ 222,  88,  72, 255 })
+#define HUD_COR_EMPATE ((Color){ 170, 170, 170, 255 })
+
 typedef enum { HUD_NENHUMA, HUD_PEDIR_TRUCO, HUD_VAR } HudAcao;
 
 /* Tudo o que o HUD mostra. Duplas na numeracao interna (0 e 1), como em

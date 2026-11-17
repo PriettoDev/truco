@@ -5,6 +5,7 @@
 #   make            -> jogo grafico   (output/truco_gui)
 #   make terminal   -> jogo terminal  (output/truco)
 #   make run        -> compila e abre o jogo grafico
+#                      (PROVISORIO: ARGS='--placar 11 11' comeca com 11 x 11)
 #   make teste      -> compila e roda os testes automaticos (sem raylib)
 #   make clean      -> apaga os executaveis
 #
@@ -77,8 +78,12 @@ $(GRAFICO): $(MODULOS) $(GUI_SRC) $(CABECALHOS) | $(OUT_DIR)
 $(OUT_DIR):
 	mkdir -p $@
 
+# PROVISORIO: ARGS passa opcoes de teste ao jogo, como
+# make run ARGS='--placar 11 11' (comeca perto do fim da partida).
+ARGS ?=
+
 run: $(GRAFICO)
-	$(GRAFICO)
+	$(GRAFICO) $(ARGS)
 
 $(TESTE): $(MODULOS) $(TESTE_SRC) $(CABECALHOS) | $(OUT_DIR)
 	$(CC) $(CFLAGS) -I. -I$(SRC_DIR) $(MODULOS) $(TESTE_SRC) -o $@

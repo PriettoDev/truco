@@ -10,9 +10,6 @@
 static const Color COR_PAINEL  = {  18,  14,  12, 210 };
 static const Color COR_MOLDURA = { 214, 170,  80, 255 };
 static const Color COR_TEXTO   = { 245, 236, 214, 255 };
-static const Color COR_NOS     = {  86, 186, 110, 255 };
-static const Color COR_ELES    = { 222,  88,  72, 255 };
-static const Color COR_EMPATE  = { 170, 170, 170, 255 };
 static const Color COR_DESATIVADO = { 92, 92, 92, 255 };
 
 /* Destaque atual de cada botao: 0 = normal, 1 = mouse em cima. */
@@ -38,9 +35,9 @@ static void bolinha_rodada(Vector2 c, int resultado, int duplaNos) {
     if (resultado == INDEFINIDO) {
         DrawCircleLinesV(c, raio, Fade(COR_TEXTO, 0.6f));   /* ainda nao jogada */
     } else if (resultado == EMPATE) {
-        DrawCircleV(c, raio, COR_EMPATE);
+        DrawCircleV(c, raio, HUD_COR_EMPATE);
     } else {
-        DrawCircleV(c, raio, (resultado == duplaNos) ? COR_NOS : COR_ELES);
+        DrawCircleV(c, raio, (resultado == duplaNos) ? HUD_COR_NOS : HUD_COR_ELES);
     }
 }
 
@@ -53,9 +50,9 @@ static void desenhar_placar(const HudDados *d, int assentoVisto) {
     Rectangle chip = { meio - 54.0f, r.y + 14.0f, 108.0f, 84.0f };
 
     painel(r);
-    texto_centro(texto, "NÓS", colNos, r.y + 12.0f, 28.0f, COR_NOS);
+    texto_centro(texto, "NÓS", colNos, r.y + 12.0f, 28.0f, HUD_COR_NOS);
     texto_centro(titulo, TextFormat("%d", d->pontos[duplaNos]), colNos, r.y + 42.0f, 76.0f, COR_TEXTO);
-    texto_centro(texto, "ELES", colEles, r.y + 12.0f, 28.0f, COR_ELES);
+    texto_centro(texto, "ELES", colEles, r.y + 12.0f, 28.0f, HUD_COR_ELES);
     texto_centro(titulo, TextFormat("%d", d->pontos[1 - duplaNos]), colEles, r.y + 42.0f, 76.0f, COR_TEXTO);
 
     /* Valor da mao no meio, em destaque: e o que muda com o truco. */

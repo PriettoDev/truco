@@ -12,6 +12,7 @@ static const Color COR_PAPEL    = { 250, 246, 236, 255 };
 static const Color COR_BORDA    = {  70,  64,  58, 255 };
 static const Color COR_VERMELHO = { 196,  30,  45, 255 };
 static const Color COR_PRETO    = {  28,  28,  32, 255 };
+static const Color COR_REALCE   = { 246, 196,  70, 255 };   /* dourado da moldura do HUD, mais claro */
 
 /* Quanto cada carta da mao esta levantada agora (0 ate DESENHO_MAO_ELEVACAO). */
 static float elevacao[MAX_CARTAS_MAO];
@@ -106,11 +107,30 @@ static void lugar_na_cruz(LadoDaMesa lado, Vector2 *centro, float *graus) {
     *graus = g;
 }
 
-void desenho_carta_jogada(Carta carta, LadoDaMesa lado) {
+void desenho_carta_jogada(Carta carta, LadoDaMesa lado, RealceCarta realce, float intensidade) {
+    const float largura = DESENHO_JOGADA_LARGURA, altura = largura * DESENHO_CARTA_PROPORCAO;
+    Rectangle area = { -largura * 0.5f, -altura * 0.5f, largura, altura };
     Vector2 c;
     float graus;
+
     lugar_na_cruz(lado, &c, &graus);
-    desenho_carta_face_girada(carta, c, DESENHO_JOGADA_LARGURA, graus);
+    desenho_carta_face_girada(carta, c, largura, graus);
+    if (realce == REALCE_NENHUM) return;
+    if (intensidade < 0.0f) intensidade = 0.0f;
+    if (intensidade > 1.0f) intensidade = 1.0f;
+
+    /* Mesma matriz da face: o realce gira junto com a carta. */
+    rlPushMatrix();
+    rlTranslatef(c.x, c.y, 0.0f);
+    rlRotatef(graus, 0.0f, 0.0f, 1.0f);
+    if (realce == REALCE_APAGADA) {
+        DrawRectangleRounded(area, 0.12f, 12, Fade(BLACK, 0.5f * intensidade));
+    } else {
+        /* Moldura por fora da carta: nao cobre o valor nem o naipe. */
+        Rectangle fora = { area.x - 5.0f, area.y - 5.0f, area.width + 10.0f, area.height + 10.0f };
+        DrawRectangleRoundedLinesEx(fora, 0.16f, 12, 6.0f, Fade(COR_REALCE, intensidade));
+    }
+    rlPopMatrix();
 }
 
 Rectangle desenho_area_cartas_jogadas(void) {

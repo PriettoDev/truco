@@ -5,7 +5,10 @@
  * fluxo (a maquina de estados). Este arquivo so le o mouse e o teclado,
  * avisa a partida e desenha o estado que ela tem.
  */
-#include <stdlib.h>   /* srand */
+#include <math.h>     /* sinf, para o pulso do realce */
+#include <stdio.h>    /* snprintf */
+#include <stdlib.h>   /* srand, atoi */
+#include <string.h>   /* strcmp */
 #include <time.h>     /* time */
 
 #include "raylib.h"
@@ -68,12 +71,43 @@ static HudDados dados_do_hud(void) {
     return d;
 }
 
+/* O realce vale da apuracao ate a mesa ser limpa (rodada ou mao nova):
+   nas telas de fim, a ultima rodada continua mostrando quem ganhou. A
+   partida marca destaque -1 quando nao ha nada para realcar. */
+static RealceCarta realce_da_carta(int indice) {
+    if (partida.destaque[0] < 0) return REALCE_NENHUM;
+    if (indice == partida.destaque[0] || indice == partida.destaque[1]) return REALCE_DESTAQUE;
+    return REALCE_APAGADA;
+}
+
+/* Na apuracao o realce surge em 0,2 s e depois pulsa devagar, para chamar
+   o olho; nas telas de fim fica parado. */
+static float intensidade_do_realce(void) {
+    float t = partida.tempoNoEstado;
+    if (partida.estado != PARTIDA_APURANDO) return 1.0f;
+    if (t < 0.2f) return t / 0.2f;
+    return 0.8f + 0.2f * cosf((t - 0.2f) * 2.0f * PI * 1.5f);
+}
+
+/* Resultado da rodada visto por quem esta na camera: a mesma dupla e "Nos"
+   para um e "Eles" para o outro, como no placar. */
+static ResultadoVisto resultado_visto(int visto) {
+    if (partida.resultadoRodada == EMPATE) return RODADA_EMPATE;
+    return (partida.resultadoRodada == visto % 2) ? RODADA_NOS : RODADA_ELES;
+}
+
+/* "Seu Bigode e Tonhao": dupla interna d = assentos d e d+2. */
+static void nomes_da_dupla(int dupla, char *saida, int tamanho) {
+    snprintf(saida, (size_t)tamanho, "%s e %s", partida_nome(dupla), partida_nome(dupla + 2));
+}
+
 static void desenhar_mesa(void) {
     int visto = partida_assento_visto(&partida);
     int visivel = partida_mao_visivel(&partida);
     const Jogador *j = partida.mesa.jogadores;
     HudDados hud = dados_do_hud();
     int voando = (partida.estado == PARTIDA_CARTA_VOANDO);
+    float intensidade = intensidade_do_realce();
 
     cena_desenhar(visto);                        /* camadas 1 a 4 */
     desenho_versos_dos_outros(j[cena_assento_na_posicao(visto, POSICAO_DIREITA)].qtdCartas,
@@ -87,7 +121,7 @@ static void desenhar_mesa(void) {
        ultima carta ainda nao chegou: ela e desenhada pelo voo, por cima. */
     for (int i = 0; i < partida.qtdNaMesa - (voando ? 1 : 0); i++) {
         LadoDaMesa lado = (LadoDaMesa)((partida.naMesa[i].assento - visto + 4) % 4);
-        desenho_carta_jogada(partida.naMesa[i].carta, lado);
+        desenho_carta_jogada(partida.naMesa[i].carta, lado, realce_da_carta(i), intensidade);
     }
 
     /* Camada 5. Privacidade: so quem esta na vez ve a propria mao; nas
@@ -103,6 +137,7 @@ static void desenhar_mesa(void) {
 
 static void desenhar_estado(void) {
     int visto = partida_assento_visto(&partida);
+    char nomes[96];
 
     switch (partida.estado) {
     case PARTIDA_INICIO_MAO:
@@ -114,21 +149,54 @@ static void desenhar_estado(void) {
         desenhar_mesa();
         telas_cobertura(visto, partida_nome(visto), partida.tempoNoEstado, PARTIDA_TEMPO_TRAVA);
         break;
+    case PARTIDA_APURANDO:
+        desenhar_mesa();
+        telas_resultado_rodada(resultado_visto(visto), partida.tempoNoEstado);
+        break;
     case PARTIDA_FIM_MAO:
         desenhar_mesa();
-        telas_aviso_provisorio("Fim da mão", "clique ou ESPAÇO para continuar");
+        if (partida.duplaVencedoraMao == 0 || partida.duplaVencedoraMao == 1) {
+            nomes_da_dupla(partida.duplaVencedoraMao, nomes, (int)sizeof nomes);
+            telas_fim_mao(nomes, partida.pontosDaMao, partida.tempoNoEstado, PARTIDA_TEMPO_TRAVA);
+        } else {
+            telas_fim_mao(NULL, 0, partida.tempoNoEstado, PARTIDA_TEMPO_TRAVA);
+        }
         break;
-    case PARTIDA_FIM_PARTIDA:
-        desenhar_mesa();
-        telas_aviso_provisorio("Fim da partida", "clique para jogar de novo");
+    case PARTIDA_FIM_PARTIDA: {
+        int d = partida.duplaVencedoraPartida;
+        nomes_da_dupla(d, nomes, (int)sizeof nomes);
+        telas_fim_partida(d, d + 2, nomes, partida_pontos(&partida, d), partida_pontos(&partida, 1 - d),
+                          partida.tempoNoEstado, PARTIDA_TEMPO_TRAVA);
         break;
+    }
     default:
         desenhar_mesa();
         break;
     }
 }
 
-int main(void) {
+/* PROVISORIO: atalho de teste para chegar logo ao fim de partida.
+   "make -C gui run ARGS='--placar 11 11'" comeca com 11 x 11 (dupla de
+   Seu Bigode x dupla de Dona Marlene). Tirar antes da entrega. */
+static void placar_de_teste(int argc, char **argv) {
+    for (int i = 1; i + 2 < argc; i++) {   /* --placar precisa de mais dois */
+        if (strcmp(argv[i], "--placar") == 0) {
+            int a = atoi(argv[i + 1]), b = atoi(argv[i + 2]);
+            /* Abaixo de 12: com 12 a partida ja teria acabado. */
+            if (a < 0 || b < 0 || a >= PONTOS_PARA_VENCER || b >= PONTOS_PARA_VENCER) {
+                TraceLog(LOG_WARNING, "PROVISORIO: --placar precisa de dois numeros de 0 a %d",
+                         PONTOS_PARA_VENCER - 1);
+                return;
+            }
+            partida.mesa.pontosDupla1 = a;   /* dupla interna 0 */
+            partida.mesa.pontosDupla2 = b;   /* dupla interna 1 */
+            TraceLog(LOG_INFO, "PROVISORIO: partida comeca com %d x %d", a, b);
+            return;
+        }
+    }
+}
+
+int main(int argc, char **argv) {
     /* O baralho embaralha com rand(); sem semente cada partida seria igual. */
     srand((unsigned)time(NULL));
 
@@ -147,6 +215,7 @@ int main(void) {
     recursos_carregar();
     conferir_posicoes();
     partida_iniciar(&partida);
+    placar_de_teste(argc, argv);   /* PROVISORIO */
 
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();

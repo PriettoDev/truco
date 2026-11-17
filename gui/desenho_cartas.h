@@ -66,8 +66,15 @@ void desenho_carta_face(Carta carta, Rectangle area);
 /* Face girada em torno do centro (graus no sentido horario, como na raylib). */
 void desenho_carta_face_girada(Carta carta, Vector2 centro, float largura, float graus);
 
-/* Carta jogada, no lugar da cruz que corresponde ao lado de quem jogou. */
-void desenho_carta_jogada(Carta carta, LadoDaMesa lado);
+/* Realce na apuracao: a carta que ganhou (no empate, a melhor de cada
+   dupla) ganha moldura dourada e as outras escurecem, para todos verem de
+   longe quem fez a rodada. */
+typedef enum { REALCE_NENHUM, REALCE_DESTAQUE, REALCE_APAGADA } RealceCarta;
+
+/* Carta jogada, no lugar da cruz que corresponde ao lado de quem jogou.
+   intensidade (0 a 1) controla o realce, para ele aparecer aos poucos e
+   pulsar; com REALCE_NENHUM e ignorada. */
+void desenho_carta_jogada(Carta carta, LadoDaMesa lado, RealceCarta realce, float intensidade);
 Rectangle desenho_area_cartas_jogadas(void);
 
 /* Voo: comeca no lugar exato da carta na mao (levantada ou nao) e vai ate
