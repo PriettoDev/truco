@@ -60,6 +60,13 @@ A apresentação será provavelmente em Windows; o desenvolvimento é em macOS.
 - Fora do escopo: online, chat, emotes, bots, carta escondida, cronômetro,
   mão de onze.
 
+## Testes
+- Todo teste que valer a pena manter fica em gui/testes/, nunca só no
+  scratchpad (que já foi apagado uma vez). O scratchpad serve só para
+  capturas de tela e experimentos descartáveis.
+- make -C gui teste compila sem raylib e roda o teste de 200 partidas
+  (gui/testes/teste_partida.c); sai com código 1 se algo falhar.
+
 ## Conferência visual
 - Para conferir a tela, use só TakeScreenshot de dentro de um programa do
   jogo, com os arquivos no scratchpad. NUNCA use screencapture, osascript ou

@@ -5,7 +5,8 @@
 #   make            -> jogo grafico   (output/truco_gui)
 #   make terminal   -> jogo terminal  (output/truco)
 #   make run        -> compila e abre o jogo grafico
-#   make clean      -> apaga os dois executaveis
+#   make teste      -> compila e roda os testes automaticos (sem raylib)
+#   make clean      -> apaga os executaveis
 #
 # Windows: rode no shell do MSYS2 ou do w64devkit (precisa de sh e mkdir -p).
 # Se a raylib estiver em outro lugar: make RAYLIB_INC=... RAYLIB_LIB=...
@@ -52,8 +53,13 @@ endif
 
 TERMINAL = $(OUT_DIR)/truco$(EXE)
 GRAFICO  = $(OUT_DIR)/truco_gui$(EXE)
+TESTE    = $(OUT_DIR)/teste_partida$(EXE)
 
-.PHONY: all gui terminal run clean
+# O teste usa so a partida_gui (que nao tem raylib) e os modulos de regra:
+# roda em qualquer maquina, sem janela e sem a raylib instalada.
+TESTE_SRC = testes/teste_partida.c partida_gui.c
+
+.PHONY: all gui terminal run teste clean
 
 all: gui
 
@@ -74,5 +80,12 @@ $(OUT_DIR):
 run: $(GRAFICO)
 	$(GRAFICO)
 
+$(TESTE): $(MODULOS) $(TESTE_SRC) $(CABECALHOS) | $(OUT_DIR)
+	$(CC) $(CFLAGS) -I. -I$(SRC_DIR) $(MODULOS) $(TESTE_SRC) -o $@
+
+# Roda sempre (mesmo sem recompilar): o resultado e o que interessa.
+teste: $(TESTE)
+	$(TESTE)
+
 clean:
-	rm -f $(TERMINAL) $(GRAFICO)
+	rm -f $(TERMINAL) $(GRAFICO) $(TESTE)
