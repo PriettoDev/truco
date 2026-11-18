@@ -48,12 +48,17 @@ int conferir_posicoes(void) {
         { HUD_CARTAS_FORTES, "HUD cartas mais fortes" },
         { HUD_BOTAO_TRUCO, "botao PEDIR TRUCO" },
         { HUD_BOTAO_VAR, "botao VAR" },
-        { TELAS_RESULTADO_RODADA, "plaquinha da rodada" },
+        { HUD_BOTAO_ACEITAR, "botao ACEITAR" },
+        { HUD_BOTAO_AUMENTAR, "botao PEDIR MAIS" },
+        { HUD_BOTAO_CORRER, "botao CORRER" },
+        { TELAS_RESULTADO_RODADA, "plaquinha da rodada / pedido" },
     };
     const Area protegidas[] = {
         { desenho_area_mao(3), "mao do jogador" },
         { desenho_area_vira_e_monte(), "vira e monte" },
         { desenho_area_cartas_jogadas(), "cartas jogadas" },
+        { desenho_area_versos_lado(DESENHO_VERSOS_ESQUERDA_CENTRO), "versos da esquerda" },
+        { desenho_area_versos_lado(DESENHO_VERSOS_DIREITA_CENTRO), "versos da direita" },
         { CENA_ROSTO_ESQUERDA, "rosto da esquerda" },
         { CENA_ROSTO_FRENTE, "rosto da frente" },
         { CENA_ROSTO_DIREITA, "rosto da direita" },
@@ -67,6 +72,7 @@ int conferir_posicoes(void) {
     const Area cruz[] = { { desenho_area_cartas_jogadas(), "cartas jogadas" } };
     const Area vizinhosDaCruz[] = {
         { desenho_area_vira_e_monte(), "vira e monte" },
+        { desenho_area_versos_lado(DESENHO_VERSOS_DIREITA_CENTRO), "versos da direita" },
         { desenho_area_versos_frente(), "versos do parceiro" },
     };
     int achou = 0;
@@ -74,6 +80,12 @@ int conferir_posicoes(void) {
     achou += cruzar(paineis, QTD(paineis), corposEMesa, QTD(corposEMesa), "fica atras do");
     achou += cruzar(hud, QTD(hud), protegidas, QTD(protegidas), "cobre");
     achou += cruzar(cruz, QTD(cruz), vizinhosDaCruz, QTD(vizinhosDaCruz), "encosta em");
+    {   /* os versos da direita chegaram perto do monte quando abriram espaco
+           para os botoes de resposta */
+        const Area direita[] = { { desenho_area_versos_lado(DESENHO_VERSOS_DIREITA_CENTRO), "versos da direita" } };
+        const Area monte[] = { { desenho_area_vira_e_monte(), "vira e monte" } };
+        achou += cruzar(direita, QTD(direita), monte, QTD(monte), "encosta em");
+    }
     if (achou == 0) TraceLog(LOG_INFO, "CONFERENCIA: nenhuma area de tela se sobrepoe");
     return achou == 0;
 }

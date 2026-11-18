@@ -28,47 +28,85 @@
 #define JANELA_LARGURA_MINIMA   960
 #define JANELA_ALTURA_MINIMA    540
 
-/* Truco e VAR ainda nao existem nesta etapa: os botoes aparecem cinza. */
-#define BOTOES_ATIVOS 0
-
 /* static: a partida nunca pode ser copiada (ver partida_gui.h) e assim vive
    o programa inteiro num lugar so. */
 static PartidaGui partida;
 
+static HudDados dados_do_hud(void) {
+    HudDados d = { 0 };
+    char nome[16];
+    int proximo = 0;
+    int travaPassou = partida.tempoNoEstado >= PARTIDA_TEMPO_TRAVA;
+
+    d.pontos[0] = partida_pontos(&partida, 0);
+    d.pontos[1] = partida_pontos(&partida, 1);
+    d.valorMao = partida.mao.aposta.valor;
+    for (int i = 0; i < 3; i++) d.resultados[i] = partida.mao.resultados[i];
+    d.vira = partida.mesa.vira;
+    d.valorPedido = partida.mao.aposta.pedido;   /* 0 sem pedido pendente */
+
+    /* Ativo so quando o modulo aceita o pedido (testado numa copia) e a
+       trava passou: o botao acende junto com o momento em que vale clicar. */
+    d.resposta = (partida.estado == PARTIDA_RESPOSTA);
+    d.pedirAtivo = partida_pode_pedir(&partida, &proximo) && travaPassou;
+    d.respostaAtiva = d.resposta && travaPassou;
+    d.varAtivo = 0;   /* VAR na Etapa 4 */
+
+    /* Cinza, o rotulo ainda mostra o proximo valor que existe ("PEDIR SEIS"
+       quando so a outra dupla pode pedir); no maximo, nao ha o que pedir. */
+    if (proximo == 0) proximo = partida_proximo_valor(&partida);
+    if (proximo > 0) {
+        partida_nome_do_valor(proximo, nome, (int)sizeof nome);
+        snprintf(d.rotuloPedir, sizeof d.rotuloPedir, "PEDIR %s", nome);
+    } else if (mao_terminou(&partida.mao)) {
+        /* Mao encerrada (corrida, fim de mao): o modulo recusa qualquer
+           pedido, mas nao porque a mao esta no maximo. */
+        snprintf(d.rotuloPedir, sizeof d.rotuloPedir, "PEDIR TRUCO");
+    } else {
+        snprintf(d.rotuloPedir, sizeof d.rotuloPedir, "NO MÁXIMO");
+    }
+    return d;
+}
+
 /* Cliques e ESPACO vao para a partida, que decide se aceita (travas). Uma
    acao por quadro: o clique que tira a cobertura nao pode jogar uma carta
    no mesmo quadro. */
-static void tratar_entrada(void) {
+static void tratar_entrada(float dt) {
     Vector2 mouse = tela_mouse();
     int clique = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
     int espaco = IsKeyPressed(KEY_SPACE);
     int vez = (partida.estado == PARTIDA_VEZ_DO_JOGADOR);
     int qtd = partida.mesa.jogadores[partida.assentoDaVez].qtdCartas;
     int sob = vez ? desenho_mao_carta_sob(qtd, mouse) : -1;
+    HudDados hud = dados_do_hud();
+    HudAcao acao = hud_atualizar(&hud, mouse, dt);
 
-    /* Na vez, a mao do jogador e o que se clica; a maozinha mostra isso. */
-    SetMouseCursor(sob >= 0 ? MOUSE_CURSOR_POINTING_HAND : MOUSE_CURSOR_DEFAULT);
+    /* A maozinha aparece sobre o que da para clicar: carta na vez ou botao
+       ativo. Na resposta as cartas so se olham. */
+    SetMouseCursor((sob >= 0 || hud_mouse_sobre_botao()) ? MOUSE_CURSOR_POINTING_HAND : MOUSE_CURSOR_DEFAULT);
 
-    if (vez) {
-        /* O voo parte do lugar da carta na mao ANTES de ela sair (qtd e sob
-           ainda sao de antes da jogada). */
-        if (clique && sob >= 0 && partida_jogar_carta(&partida, sob)) {
+    switch (partida.estado) {
+    case PARTIDA_VEZ_DO_JOGADOR:
+        if (acao == HUD_PEDIR_TRUCO) {
+            partida_pedir_truco(&partida);
+        } else if (clique && sob >= 0 && partida_jogar_carta(&partida, sob)) {
+            /* O voo parte do lugar da carta na mao ANTES de ela sair (qtd
+               e sob ainda sao de antes da jogada). */
             desenho_voo_iniciar(partida.naMesa[partida.qtdNaMesa - 1].carta, sob, qtd, LADO_EU);
             desenho_mao_retirar(sob, qtd);
         }
-    } else if (clique || espaco) {
-        partida_confirmar(&partida);
+        break;
+    case PARTIDA_RESPOSTA:
+        /* So os botoes respondem: um clique solto ou ESPACO nao pode
+           aceitar um truco sem querer. */
+        if (acao == HUD_ACEITAR) partida_responder(&partida, RESPOSTA_ACEITAR);
+        if (acao == HUD_AUMENTAR) partida_responder(&partida, RESPOSTA_AUMENTAR);
+        if (acao == HUD_CORRER) partida_responder(&partida, RESPOSTA_CORRER);
+        break;
+    default:
+        if (clique || espaco) partida_confirmar(&partida);
+        break;
     }
-}
-
-static HudDados dados_do_hud(void) {
-    HudDados d;
-    d.pontos[0] = partida_pontos(&partida, 0);
-    d.pontos[1] = partida_pontos(&partida, 1);
-    d.valorMao = partida.mao.aposta.valor;
-    for (int i = 0; i < 3; i++) d.resultados[i] = partida.mao.resultados[i];
-    d.vira = partida.mesa.vira;
-    return d;
 }
 
 /* O realce vale da apuracao ate a mesa ser limpa (rodada ou mao nova):
@@ -132,12 +170,13 @@ static void desenhar_mesa(void) {
     /* Depois da mao: a carta sai de dentro dela e passa por cima. */
     if (voando) desenho_voo();
 
-    hud_desenhar(&hud, visto, BOTOES_ATIVOS);   /* camada 6 */
+    hud_desenhar(&hud, visto);   /* camada 6 */
 }
 
 static void desenhar_estado(void) {
     int visto = partida_assento_visto(&partida);
     char nomes[96];
+    char valor[16];
 
     switch (partida.estado) {
     case PARTIDA_INICIO_MAO:
@@ -153,13 +192,32 @@ static void desenhar_estado(void) {
         desenhar_mesa();
         telas_resultado_rodada(resultado_visto(visto), partida.tempoNoEstado);
         break;
+    case PARTIDA_ANUNCIO_PEDIDO:
+        desenhar_mesa();
+        partida_nome_do_valor(partida.mao.aposta.pedido, valor, (int)sizeof valor);
+        telas_anuncio_pedido(partida_nome(partida.assentoPediu), valor, partida.tempoNoEstado);
+        break;
+    case PARTIDA_COBERTURA_RESPOSTA:
+        desenhar_mesa();
+        partida_nome_do_valor(partida.mao.aposta.pedido, valor, (int)sizeof valor);
+        telas_cobertura_resposta(visto, partida_nome(visto), partida_nome(partida.assentoPediu), valor,
+                                 partida.tempoNoEstado, PARTIDA_TEMPO_TRAVA);
+        break;
+    case PARTIDA_RESPOSTA:
+        desenhar_mesa();
+        partida_nome_do_valor(partida.mao.aposta.pedido, valor, (int)sizeof valor);
+        telas_pedido_pendente(partida_nome(partida.assentoPediu), valor);
+        break;
     case PARTIDA_FIM_MAO:
         desenhar_mesa();
         if (partida.duplaVencedoraMao == 0 || partida.duplaVencedoraMao == 1) {
+            char correu[96];
             nomes_da_dupla(partida.duplaVencedoraMao, nomes, (int)sizeof nomes);
-            telas_fim_mao(nomes, partida.pontosDaMao, partida.tempoNoEstado, PARTIDA_TEMPO_TRAVA);
+            if (partida.assentoCorreu >= 0) nomes_da_dupla(partida.assentoCorreu % 2, correu, (int)sizeof correu);
+            telas_fim_mao(nomes, partida.assentoCorreu >= 0 ? correu : NULL, partida.pontosDaMao,
+                          partida.tempoNoEstado, PARTIDA_TEMPO_TRAVA);
         } else {
-            telas_fim_mao(NULL, 0, partida.tempoNoEstado, PARTIDA_TEMPO_TRAVA);
+            telas_fim_mao(NULL, NULL, 0, partida.tempoNoEstado, PARTIDA_TEMPO_TRAVA);
         }
         break;
     case PARTIDA_FIM_PARTIDA: {
@@ -222,7 +280,7 @@ int main(int argc, char **argv) {
         int qtdVez;
 
         if (IsKeyPressed(KEY_F11)) tela_alternar_tela_cheia();
-        tratar_entrada();
+        tratar_entrada(dt);
         partida_atualizar(&partida, dt);
 
         /* O destaque da mao so anda na vez; fora dela volta tudo ao lugar
@@ -230,7 +288,6 @@ int main(int argc, char **argv) {
            levantada. */
         qtdVez = partida.mesa.jogadores[partida.assentoDaVez].qtdCartas;
         desenho_mao_atualizar(partida.estado == PARTIDA_VEZ_DO_JOGADOR ? qtdVez : 0, tela_mouse(), dt);
-        hud_atualizar(tela_mouse(), dt, BOTOES_ATIVOS);
         desenho_voo_atualizar(dt);
         /* A mao na tela e sempre a de quem a camera mostra (de frente ou
            em versos): as que sobraram deslizam durante o voo. */

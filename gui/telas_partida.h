@@ -12,7 +12,8 @@
 #include "raylib.h"
 
 /* Plaquinha "Rodada:" a esquerda da cruz, longe dos rostos, da mao e das
-   cartas jogadas (conferencia.c confere). */
+   cartas jogadas (conferencia.c confere). Na resposta ao truco, o mesmo
+   lugar lembra quem pediu e o que. */
 #define TELAS_RESULTADO_RODADA ((Rectangle){ 440, 630, 310, 140 })
 
 /* Resultado da rodada ja convertido para quem esta vendo. */
@@ -28,8 +29,23 @@ void telas_cobertura(int assento, const char *nome, float tempo, float trava);
 void telas_resultado_rodada(ResultadoVisto resultado, float tempo);
 
 /* Fim de mao por cima da mesa escurecida. duplaVencedora = "Fulano e
-   Beltrano", ou NULL se a mao empatou (ninguem pontua). */
-void telas_fim_mao(const char *duplaVencedora, int pontos, float tempo, float trava);
+   Beltrano", ou NULL se a mao empatou (ninguem pontua). duplaCorreu: NULL,
+   ou a dupla que correu do truco (a mao acabou antes das 3 rodadas). */
+void telas_fim_mao(const char *duplaVencedora, const char *duplaCorreu, int pontos, float tempo, float trava);
+
+/* --- truco. nomeValor vem de partida_nome_do_valor ("TRUCO", "SEIS"...). */
+
+/* "TRUCO!" grande por cima da mesa, com o nome de quem pediu. tempo =
+   segundos de anuncio (a palavra entra crescendo). */
+void telas_anuncio_pedido(const char *nomePediu, const char *nomeValor, float tempo);
+
+/* Passa o computador para quem responde: "<quem pediu> pediu TRUCO!" e
+   "VEZ DE <quem responde>", com o personagem dele, como a cobertura. */
+void telas_cobertura_resposta(int assentoResponde, const char *nomeResponde, const char *nomePediu,
+                              const char *nomeValor, float tempo, float trava);
+
+/* Lembrete durante a resposta, no lugar da plaquinha da rodada. */
+void telas_pedido_pendente(const char *nomePediu, const char *nomeValor);
 
 /* Fim de partida: os dois vencedores de frente, o nome da dupla e o placar
    final. assentoA/assentoB sao os assentos da dupla vencedora. */

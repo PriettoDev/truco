@@ -1,4 +1,5 @@
 #include <math.h>   /* expf */
+#include <stdio.h>  /* snprintf */
 
 #include "hud.h"
 #include "rodada.h"          /* EMPATE e INDEFINIDO */
@@ -12,8 +13,11 @@ static const Color COR_MOLDURA = { 214, 170,  80, 255 };
 static const Color COR_TEXTO   = { 245, 236, 214, 255 };
 static const Color COR_DESATIVADO = { 92, 92, 92, 255 };
 
-/* Destaque atual de cada botao: 0 = normal, 1 = mouse em cima. */
-static float destaqueTruco, destaqueVar;
+/* Destaque atual de cada botao (0 = normal, 1 = mouse em cima), na ordem
+   de HudAcao: o indice e a propria acao. */
+#define QTD_BOTOES 6
+static float destaque[QTD_BOTOES];
+static int sobreBotao;
 
 static void painel(Rectangle r) {
     DrawRectangleRounded(r, 0.18f, 10, COR_PAINEL);
@@ -41,6 +45,41 @@ static void bolinha_rodada(Vector2 c, int resultado, int duplaNos) {
     }
 }
 
+/* "VALE 1 -> 3?" enquanto o pedido nao foi respondido. A seta vem da fonte
+   de naipes: as de titulo e de texto nao tem U+2192 (conferir_fontes.py),
+   entao o trecho e desenhado em tres pedacos. O chip fica mais largo e
+   claro, para todo mundo ver que a mao esta em negociacao. */
+#define SETA "\xE2\x86\x92"   /* U+2192 em UTF-8, igual em qualquer compilador */
+
+static void desenhar_vale_pedido(const HudDados *d, float meio, Rectangle chip) {
+    Font titulo = recurso_fonte(FONTE_TITULO);
+    Font texto = recurso_fonte(FONTE_TEXTO);
+    Font naipes = recurso_fonte(FONTE_NAIPES);
+    const float tam = 40.0f, tamSeta = 34.0f, folga = 6.0f;
+    const char *antes = TextFormat("%d", d->valorMao);
+    char depois[16];
+    Vector2 mAntes, mSeta, mDepois;
+    float x, y = chip.y + 32.0f;
+
+    snprintf(depois, sizeof depois, "%d?", d->valorPedido);
+    mAntes = MeasureTextEx(titulo, antes, tam, 1.0f);
+    mSeta = MeasureTextEx(naipes, SETA, tamSeta, 1.0f);
+    mDepois = MeasureTextEx(titulo, depois, tam, 1.0f);
+
+    chip.width = 156.0f;
+    chip.x = meio - chip.width * 0.5f;
+    DrawRectangleRounded(chip, 0.3f, 8, ColorBrightness(COR_MOLDURA, 0.25f));
+    DrawRectangleRoundedLinesEx(chip, 0.3f, 8, 3.0f, COR_TEXTO);
+    texto_centro(texto, "VALE", meio, chip.y + 4.0f, 22.0f, COR_PAINEL);
+
+    x = meio - (mAntes.x + folga + mSeta.x + folga + mDepois.x) * 0.5f;
+    DrawTextEx(titulo, antes, (Vector2){ x, y }, tam, 1.0f, COR_PAINEL);
+    x += mAntes.x + folga;
+    DrawTextEx(naipes, SETA, (Vector2){ x, y + (tam - mSeta.y) * 0.5f }, tamSeta, 1.0f, COR_PAINEL);
+    x += mSeta.x + folga;
+    DrawTextEx(titulo, depois, (Vector2){ x, y }, tam, 1.0f, COR_PAINEL);
+}
+
 static void desenhar_placar(const HudDados *d, int assentoVisto) {
     Rectangle r = HUD_PLACAR;
     Font titulo = recurso_fonte(FONTE_TITULO);
@@ -56,9 +95,13 @@ static void desenhar_placar(const HudDados *d, int assentoVisto) {
     texto_centro(titulo, TextFormat("%d", d->pontos[1 - duplaNos]), colEles, r.y + 42.0f, 76.0f, COR_TEXTO);
 
     /* Valor da mao no meio, em destaque: e o que muda com o truco. */
-    DrawRectangleRounded(chip, 0.3f, 8, COR_MOLDURA);
-    texto_centro(texto, "VALE", meio, chip.y + 4.0f, 22.0f, COR_PAINEL);
-    texto_centro(titulo, TextFormat("%d", d->valorMao), meio, chip.y + 24.0f, 58.0f, COR_PAINEL);
+    if (d->valorPedido > 0) {
+        desenhar_vale_pedido(d, meio, chip);
+    } else {
+        DrawRectangleRounded(chip, 0.3f, 8, COR_MOLDURA);
+        texto_centro(texto, "VALE", meio, chip.y + 4.0f, 22.0f, COR_PAINEL);
+        texto_centro(titulo, TextFormat("%d", d->valorMao), meio, chip.y + 24.0f, 58.0f, COR_PAINEL);
+    }
 
     for (int i = 0; i < 3; i++) {
         bolinha_rodada((Vector2){ meio + (i - 1) * 34.0f, r.y + r.height - 26.0f },
@@ -138,32 +181,63 @@ static void desenhar_botao(Rectangle r, const char *rotulo, Color cor, float des
                  e.y + (e.height - tamanhoTexto) * 0.5f, tamanhoTexto * escala, corTexto);
 }
 
-HudAcao hud_atualizar(Vector2 mouse, float dt, int botoesAtivos) {
-    float passo = 1.0f - expf(-HUD_SUAVIDADE * dt);   /* igual em qualquer FPS */
-    int sobreTruco = botoesAtivos && CheckCollisionPointRec(mouse, HUD_BOTAO_TRUCO);
-    int sobreVar = botoesAtivos && CheckCollisionPointRec(mouse, HUD_BOTAO_VAR);
+/* Os botoes de cada momento: na vez, PEDIR TRUCO e VAR; na resposta,
+   ACEITAR, PEDIR MAIS (so se o modulo aceitar), CORRER e VAR. */
+typedef struct {
+    HudAcao acao;
+    Rectangle area;
+    const char *rotulo;
+    Color cor;
+    float tamanhoTexto;
+    int ativo;
+} Botao;
 
-    destaqueTruco += ((sobreTruco ? 1.0f : 0.0f) - destaqueTruco) * passo;
-    destaqueVar += ((sobreVar ? 1.0f : 0.0f) - destaqueVar) * passo;
-
-    /* Desativados, o cursor fica com quem chamou (a mao do jogador tambem
-       usa a maozinha). */
-    if (!botoesAtivos) return HUD_NENHUMA;
-
-    /* Mãozinha no cursor: deixa claro que da para clicar. */
-    SetMouseCursor((sobreTruco || sobreVar) ? MOUSE_CURSOR_POINTING_HAND : MOUSE_CURSOR_DEFAULT);
-
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-        if (sobreTruco) return HUD_PEDIR_TRUCO;
-        if (sobreVar) return HUD_VAR;
+static int montar_botoes(const HudDados *d, Botao b[QTD_BOTOES]) {
+    int n = 0;
+    if (d->resposta) {
+        b[n++] = (Botao){ HUD_ACEITAR, HUD_BOTAO_ACEITAR, "ACEITAR", { 46, 130, 70, 255 }, 44.0f, d->respostaAtiva };
+        if (d->pedirAtivo)
+            b[n++] = (Botao){ HUD_AUMENTAR, HUD_BOTAO_AUMENTAR, d->rotuloPedir, { 190, 60, 30, 255 }, 40.0f,
+                              d->respostaAtiva };
+        b[n++] = (Botao){ HUD_CORRER, HUD_BOTAO_CORRER, "CORRER", { 110, 84, 70, 255 }, 44.0f, d->respostaAtiva };
+    } else {
+        b[n++] = (Botao){ HUD_PEDIR_TRUCO, HUD_BOTAO_TRUCO, d->rotuloPedir, { 190, 60, 30, 255 }, 40.0f,
+                          d->pedirAtivo };
     }
-    return HUD_NENHUMA;
+    b[n++] = (Botao){ HUD_VAR, HUD_BOTAO_VAR, "VAR", { 40, 70, 120, 255 }, 38.0f, d->varAtivo };
+    return n;
 }
 
-void hud_desenhar(const HudDados *dados, int assentoVisto, int botoesAtivos) {
+HudAcao hud_atualizar(const HudDados *dados, Vector2 mouse, float dt) {
+    float passo = 1.0f - expf(-HUD_SUAVIDADE * dt);   /* igual em qualquer FPS */
+    Botao b[QTD_BOTOES];
+    int n = montar_botoes(dados, b);
+    HudAcao clicado = HUD_NENHUMA;
+    float alvo[QTD_BOTOES] = { 0 };
+
+    sobreBotao = 0;
+    for (int i = 0; i < n; i++) {
+        /* Desativado nao destaca nem recebe clique: ninguem acha que travou. */
+        if (!b[i].ativo || !CheckCollisionPointRec(mouse, b[i].area)) continue;
+        alvo[b[i].acao] = 1.0f;
+        sobreBotao = 1;
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) clicado = b[i].acao;
+    }
+    for (int i = 0; i < QTD_BOTOES; i++) destaque[i] += (alvo[i] - destaque[i]) * passo;
+    return clicado;
+}
+
+int hud_mouse_sobre_botao(void) {
+    return sobreBotao;
+}
+
+void hud_desenhar(const HudDados *dados, int assentoVisto) {
+    Botao b[QTD_BOTOES];
+    int n = montar_botoes(dados, b);
+
     desenhar_placar(dados, assentoVisto);
     desenhar_cartas_fortes(dados);
-    desenhar_botao(HUD_BOTAO_TRUCO, "PEDIR TRUCO", (Color){ 190, 60, 30, 255 }, destaqueTruco, 44.0f,
-                   botoesAtivos);
-    desenhar_botao(HUD_BOTAO_VAR, "VAR", (Color){ 40, 70, 120, 255 }, destaqueVar, 38.0f, botoesAtivos);
+    for (int i = 0; i < n; i++) {
+        desenhar_botao(b[i].area, b[i].rotulo, b[i].cor, destaque[b[i].acao], b[i].tamanhoTexto, b[i].ativo);
+    }
 }

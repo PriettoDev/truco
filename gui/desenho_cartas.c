@@ -336,6 +336,13 @@ Rectangle desenho_area_versos_frente(void) {
     return (Rectangle){ c.x - 110.0f, c.y - 66.0f, 220.0f, 132.0f };
 }
 
+Rectangle desenho_area_versos_lado(Vector2 c) {
+    /* Leque girado 90 graus: as cartas ficam deitadas (120 x 80) e se
+       espalham na vertical (+-44), inclinadas ate 9 graus. Meia largura
+       60*cos9 + 40*sin9 (66); meia altura 44 + 40*cos9 + 60*sin9 (93). */
+    return (Rectangle){ c.x - 66.0f, c.y - 93.0f, 132.0f, 186.0f };
+}
+
 /* Leque de versos: cada carta um pouco deslocada e inclinada em relacao ao
    centro, e o leque inteiro girado para o lado de quem segura. */
 static void desenhar_leque(int quantidade, Vector2 centro, float grausLeque) {

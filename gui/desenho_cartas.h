@@ -38,7 +38,9 @@
 #define DESENHO_VERSOS_FRENTE_GRAUS    180.0f
 #define DESENHO_VERSOS_ESQUERDA_CENTRO ((Vector2){  330, 790 })
 #define DESENHO_VERSOS_ESQUERDA_GRAUS   90.0f
-#define DESENHO_VERSOS_DIREITA_CENTRO  ((Vector2){ 1590, 790 })
+/* Direita mais para o meio que a esquerda: a coluna x 1580 fica livre
+   para os botoes de resposta ao truco (hud.h). */
+#define DESENHO_VERSOS_DIREITA_CENTRO  ((Vector2){ 1470, 790 })
 #define DESENHO_VERSOS_DIREITA_GRAUS   -90.0f
 
 /* Cartas jogadas: uma cruz no meio da mesa, cada carta na frente de quem a
@@ -112,6 +114,7 @@ void desenho_monte(void);
 Rectangle desenho_area_mao(int quantidade);
 Rectangle desenho_area_vira_e_monte(void);
 Rectangle desenho_area_versos_frente(void);   /* leque do parceiro, inteiro */
+Rectangle desenho_area_versos_lado(Vector2 centro);   /* leque deitado (esquerda ou direita) */
 
 /* Versos diante de cada um dos outros 3 jogadores (0 a 3 cartas cada). */
 void desenho_versos_dos_outros(int qtdDireita, int qtdFrente, int qtdEsquerda);

@@ -128,6 +128,11 @@ int partida_responder(PartidaGui *p, RespostaTruco resposta);
    VEZ_DO_JOGADOR) e para quem responde (em RESPOSTA, o "pedir mais"). */
 int partida_pode_pedir(const PartidaGui *p, int *proximo);
 
+/* Proximo valor que alguma dupla poderia pedir agora (0 = nenhum, a mao
+   ja esta no maximo). So para o rotulo do botao desativado: "PEDIR SEIS"
+   cinza mostra que o seis existe, mas nao e a sua vez de pedir. */
+int partida_proximo_valor(const PartidaGui *p);
+
 /* Nome do valor para botoes e anuncios: 3 TRUCO, 6 SEIS, 9 NOVE, 12 DOZE.
    Fora da tabela, o proprio numero ("15"), para a tela nao quebrar se a
    sequencia do aposta.c mudar. saida precisa de pelo menos 12 bytes. */

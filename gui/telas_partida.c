@@ -85,7 +85,7 @@ void telas_resultado_rodada(ResultadoVisto resultado, float tempo) {
     texto_em(titulo, rotulo, cx, r.y + 52.0f, 78.0f, Fade(cor, a));
 }
 
-void telas_fim_mao(const char *duplaVencedora, int pontos, float tempo, float trava) {
+void telas_fim_mao(const char *duplaVencedora, const char *duplaCorreu, int pontos, float tempo, float trava) {
     Font titulo = recurso_fonte(FONTE_TITULO);
     Font texto = recurso_fonte(FONTE_TEXTO);
     /* Termina em y 580, acima da cruz (que comeca em 606): a ultima rodada,
@@ -103,6 +103,11 @@ void telas_fim_mao(const char *duplaVencedora, int pontos, float tempo, float tr
     texto_centro(texto, "FIM DA MÃO", faixa.y + 28.0f, 40.0f, COR_MOLDURA);
     if (duplaVencedora == NULL) {
         texto_centro(titulo, "Mão empatada: ninguém pontua", faixa.y + 92.0f, 84.0f, COR_TEXTO);
+    } else if (duplaCorreu != NULL) {
+        /* Dupla e plural: "Dona Marlene e Kiko correram". */
+        texto_centro(titulo, TextFormat("%s correram", duplaCorreu), faixa.y + 82.0f, 76.0f, COR_TEXTO);
+        texto_centro(texto, TextFormat("— %s levaram %d %s", duplaVencedora, pontos, pontos == 1 ? "ponto" : "pontos"),
+                     faixa.y + 172.0f, 48.0f, COR_TEXTO);
     } else {
         texto_centro(titulo, duplaVencedora, faixa.y + 82.0f, 84.0f, COR_TEXTO);
         texto_centro(texto, TextFormat("levaram %d %s", pontos, pontos == 1 ? "ponto" : "pontos"),
@@ -129,4 +134,58 @@ void telas_fim_partida(int assentoA, int assentoB, const char *duplaVencedora,
                  COR_MOLDURA);
     texto_centro(texto, "clique para jogar de novo", 940.0f, 46.0f,
                  Fade(COR_TEXTO, convite(tempo, trava)));
+}
+
+/* ----------------------------------------------------------------- truco */
+
+static const Color COR_TRUCO = { 236, 92, 44, 255 };   /* laranja do botao de pedir */
+
+#define TEMPO_ENTRAR 0.25f   /* a palavra do anuncio entra crescendo */
+
+void telas_anuncio_pedido(const char *nomePediu, const char *nomeValor, float tempo) {
+    Font titulo = recurso_fonte(FONTE_TITULO);
+    Font texto = recurso_fonte(FONTE_TEXTO);
+    const char *palavra = TextFormat("%s!", nomeValor);
+    float a = tempo / TEMPO_ENTRAR, tamanho;
+    Vector2 medida, pos;
+
+    if (a > 1.0f) a = 1.0f;
+    /* Entra grande e assenta (1,4x ate 1x): chama o olho de toda a mesa,
+       como o grito de truco. */
+    tamanho = 230.0f * (1.4f - 0.4f * a);
+    medida = MeasureTextEx(titulo, palavra, tamanho, 1.0f);
+    pos = (Vector2){ TELA_LARGURA * 0.5f - medida.x * 0.5f, 470.0f - medida.y * 0.5f };
+
+    DrawRectangle(0, 0, TELA_LARGURA, TELA_ALTURA, Fade(BLACK, 0.45f * a));
+    texto_centro(texto, TextFormat("%s pediu", nomePediu), 250.0f, 56.0f, Fade(COR_TEXTO, a));
+    /* Sombra em vez de contorno: a fonte de titulo ja e grossa. */
+    DrawTextEx(titulo, palavra, (Vector2){ pos.x + 8.0f, pos.y + 10.0f }, tamanho, 1.0f, Fade(BLACK, 0.6f * a));
+    DrawTextEx(titulo, palavra, pos, tamanho, 1.0f, Fade(COR_TRUCO, a));
+}
+
+void telas_cobertura_resposta(int assentoResponde, const char *nomeResponde, const char *nomePediu,
+                              const char *nomeValor, float tempo, float trava) {
+    Font titulo = recurso_fonte(FONTE_TITULO);
+    Font texto = recurso_fonte(FONTE_TEXTO);
+
+    DrawRectangle(0, 0, TELA_LARGURA, TELA_ALTURA, COR_COBERTURA);
+    personagem_de_frente(assentoResponde, (Rectangle){ 760, 60, 400, 460 });
+    texto_centro(titulo, TextFormat("%s pediu %s!", nomePediu, nomeValor), 540.0f, 64.0f, COR_TRUCO);
+    texto_centro(texto, "VEZ DE", 650.0f, 40.0f, COR_MOLDURA);
+    texto_centro(titulo, nomeResponde, 694.0f, 110.0f, COR_TEXTO);
+    texto_centro(texto, "responder", 820.0f, 46.0f, COR_MOLDURA);
+    texto_centro(texto, "clique ou ESPAÇO para ver suas cartas", 920.0f, 46.0f,
+                 Fade(COR_TEXTO, convite(tempo, trava)));
+}
+
+void telas_pedido_pendente(const char *nomePediu, const char *nomeValor) {
+    Font titulo = recurso_fonte(FONTE_TITULO);
+    Font texto = recurso_fonte(FONTE_TEXTO);
+    Rectangle r = TELAS_RESULTADO_RODADA;
+    float cx = r.x + r.width * 0.5f;
+
+    DrawRectangleRounded(r, 0.2f, 10, COR_PAINEL);
+    DrawRectangleRoundedLinesEx(r, 0.2f, 10, 4.0f, COR_TRUCO);
+    texto_em(texto, TextFormat("%s pediu", nomePediu), cx, r.y + 14.0f, 32.0f, COR_TEXTO);
+    texto_em(titulo, TextFormat("%s!", nomeValor), cx, r.y + 52.0f, 74.0f, COR_TRUCO);
 }

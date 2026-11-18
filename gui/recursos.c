@@ -96,6 +96,9 @@ static int montar_codepoints(FonteId id, int *codepoints) {
         codepoints[n++] = 0x2663;   /* paus    */
         codepoints[n++] = 0x2665;   /* copas   */
         codepoints[n++] = 0x2666;   /* ouros   */
+        /* Seta do HUD durante um pedido de truco ("VALE 1 -> 3?"): as fontes
+           de titulo e de texto nao tem (conferir_fontes.py), a de naipes tem. */
+        codepoints[n++] = 0x2192;
     } else {
         /* Latin-1 (a0 a ff): acentos do portugues, como em MAO com til. */
         for (int c = 0xA0; c <= 0xFF; c++) codepoints[n++] = c;
@@ -108,7 +111,8 @@ static int montar_codepoints(FonteId id, int *codepoints) {
     return n;
 }
 
-/* Maior lista possivel: ASCII (95) + Latin-1 (96) + pontuacao (4). */
+/* Maior lista possivel: ASCII (95) + Latin-1 (96) + pontuacao (4). A de
+   naipes (95 + 4 naipes + seta) e menor. */
 #define MAX_CODEPOINTS (95 + 96 + 4)
 
 static void carregar_fonte(FonteId id) {

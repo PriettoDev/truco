@@ -281,6 +281,15 @@ int partida_pode_pedir(const PartidaGui *p, int *proximo) {
     return 1;
 }
 
+int partida_proximo_valor(const PartidaGui *p) {
+    /* Pergunta ao modulo pelas duas duplas, cada uma numa copia. */
+    for (int dupla = 0; dupla < 2; dupla++) {
+        Mao copia = p->mao;
+        if (mao_pedir(&copia, dupla)) return copia.aposta.pedido;
+    }
+    return 0;
+}
+
 void partida_nome_do_valor(int valor, char *saida, int tamanho) {
     const char *nome = NULL;
     if (valor == 3) nome = "TRUCO";

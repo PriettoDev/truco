@@ -20,7 +20,7 @@ import sys
 
 ASCII = list(range(32, 127))
 TEXTO = ASCII + list(range(0xA0, 0x100)) + [0x2014, 0x2026, 0x201C, 0x201D]
-NAIPES = ASCII + [0x2660, 0x2663, 0x2665, 0x2666]
+NAIPES = ASCII + [0x2660, 0x2663, 0x2665, 0x2666, 0x2192]   # seta do VALE 1 -> 3?
 
 FONTES = (
     ('fonte_titulo.ttf', TEXTO),
