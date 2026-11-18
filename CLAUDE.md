@@ -1,3 +1,5 @@
+Responda sempre em português do Brasil, em todas as mensagens, inclusive nas curtas e nos resumos.
+
 # Truco no Bar do Pato — interface gráfica (raylib)
 
 ## Contexto
@@ -23,8 +25,10 @@ A apresentação será provavelmente em Windows; o desenvolvimento é em macOS.
   - Nomes enganosos em Mesa: numeroDaRodada e inicioDaRodada se referem à MÃO,
     não à rodada.
 - O fluxo da partida do main.c está em funções static que leem o teclado:
-  não reaproveitar. O main_gui.c refaz o fluxo como máquina de estados,
-  chamando diretamente os módulos.
+  não reaproveitar. O gui/partida_gui.c refaz o fluxo como máquina de
+  estados (sem raylib, testável), chamando diretamente os módulos e citando
+  as linhas do main.c que reproduz. O main_gui.c só lê mouse e teclado,
+  avisa a partida e desenha o estado dela.
 - Tudo compila sem avisos com gcc -Wall, em macOS e em Windows (MinGW).
 - Comentários em português, explicando o PORQUÊ.
 - Antes de cada etapa, explique o plano em poucas linhas e espere meu OK.
@@ -42,6 +46,9 @@ A apresentação será provavelmente em Windows; o desenvolvimento é em macOS.
 - Assentos (sentido anti-horário): vista do assento A: direita = (A+1)%4,
   frente = (A+2)%4 (parceiro), esquerda = (A+3)%4. O jogador do assento s usa
   o personagem p(s+1).
+- Nomes dos jogadores (gui/partida_gui.c): assento 0 Seu Bigode, 1 Dona
+  Marlene, 2 Tonhão, 3 Kiko. Duplas: Seu Bigode e Tonhão (interna 0) x
+  Dona Marlene e Kiko (interna 1).
 - Personagens: 6 imagens cada (vista frente/lado × neutro/piscando/falando).
   O parceiro (frente) usa a vista "frente"; os laterais usam "lado". A arte
   "lado" olha para a DIREITA: na esquerda da tela é usada como está, na
@@ -79,10 +86,15 @@ A apresentação será provavelmente em Windows; o desenvolvimento é em macOS.
 - Valor da mão: a sequência vem do aposta.c (hoje 1, 3, 6, 12; sem o 9). O
   HUD só exibe aposta.valor e não assume valores fixos. Regra a confirmar
   com o time; não alterar src/ por conta disso.
-- somarPontos: refeito no main_gui.c (é static no main.c), marcado com o
+- somarPontos: refeito no gui/partida_gui.c (é static no main.c), marcado com o
   comentário "TEMPORARIO: substituir pela funcao publica do modulo de partida
   (Pessoa 1)". Não alterar src/.
 - Truco no modo passa a vez: só quem está na vez pode pedir, antes de jogar
   a carta. Quem responde é o próximo jogador da dupla adversária na ordem de
   jogo: aparece a tela de passa a vez para ele, que escolhe aceitar, correr ou
   aumentar; depois o computador volta para quem pediu.
+
+## Provisórios a remover antes da entrega
+- Atalho --placar: make -C gui run ARGS='--placar 11 11' começa a partida
+  com 11 x 11, para testar o fim de partida. Marcado PROVISORIO em
+  gui/main_gui.c (placar_de_teste) e no gui/Makefile (ARGS).
