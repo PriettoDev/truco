@@ -93,6 +93,14 @@ A apresentação será provavelmente em Windows; o desenvolvimento é em macOS.
   a carta. Quem responde é o próximo jogador da dupla adversária na ordem de
   jogo: aparece a tela de passa a vez para ele, que escolhe aceitar, correr ou
   aumentar; depois o computador volta para quem pediu.
+  - Quem responde é SEMPRE o próximo na ordem de jogo depois de quem fez o
+    ÚLTIMO pedido: (assento + 1) % 4. Ex.: Seu Bigode (0) pede truco, Dona
+    Marlene (1) pede seis, quem responde ao seis é Tonhão (2). Depois do
+    aceite final, a vez volta para quem estava jogando (main.c 386-404).
+    O main.c deixa a dupla escolher quem fala (235-246); aqui a regra é fixa.
+  - O botão de pedir pergunta ao módulo (mao_pedir numa cópia da Mao), sem
+    repetir as regras do aposta.c. Rótulos: 3 TRUCO, 6 SEIS, 9 NOVE, 12 DOZE;
+    fora da tabela, "PEDIR <valor>".
 
 ## Provisórios a remover antes da entrega
 - Atalho --placar: make -C gui run ARGS='--placar 11 11' começa a partida

@@ -34,10 +34,29 @@
  *                                  |  nova partida  |<----------| FIM_PARTIDA |
  *                                  +----------------+           +-------------+
  *
- * Cliques e ESPACO sao ignorados em CARTA_VOANDO e APURANDO. Nas telas que
- * esperam clique (COBERTURA, FIM_MAO, FIM_PARTIDA) e na escolha da carta,
- * o clique so vale depois de PARTIDA_TEMPO_TRAVA, para um clique duplo nao
- * passar direto pela tela seguinte.
+ * Truco (sai de VEZ_DO_JOGADOR, antes de jogar a carta):
+ *
+ *   VEZ_DO_JOGADOR --pedir--> +----------------+
+ *         ^                   | ANUNCIO_PEDIDO |  1,2 s ("TRUCO!")
+ *         |                   +-------+--------+
+ *         |                           v
+ *         |  clique           +--------------------+
+ *     COBERTURA <---+         | COBERTURA_RESPOSTA |  passa para quem responde
+ *   (de quem esta   |         +---------+----------+
+ *    na vez)        |                   v clique
+ *                   | aceitar   +----------+  pedir mais   ANUNCIO_PEDIDO
+ *                   +-----------| RESPOSTA |-------------> (responde o proximo
+ *                               +----+-----+                depois de quem pediu)
+ *                                    | correr
+ *                                    v
+ *                                 FIM_MAO  (a dupla que pediu leva o valor
+ *                                           confirmado antes do pedido)
+ *
+ * Cliques e ESPACO sao ignorados em CARTA_VOANDO, APURANDO e ANUNCIO_PEDIDO.
+ * Nas telas que esperam clique (as coberturas, RESPOSTA, FIM_MAO,
+ * FIM_PARTIDA) e na escolha da carta, o clique so vale depois de
+ * PARTIDA_TEMPO_TRAVA, para um clique duplo nao passar direto pela tela
+ * seguinte.
  */
 #include <stdio.h>
 
@@ -89,8 +108,14 @@ static void preparar_mesa(PartidaGui *p) {
 }
 
 void partida_iniciar(PartidaGui *p) {
+    /* O contador sobrevive a partida nova: quem guardou o ultimo valor
+       visto nao pode confundir o primeiro evento novo com um antigo. */
+    unsigned contador = p->contadorEventos;
+
     /* Zera por atribuicao de um literal (nao e copia de outra partida). */
     *p = (PartidaGui){ 0 };
+    p->contadorEventos = contador;
+    p->assentoPediu = p->assentoResponde = p->assentoCorreu = -1;
     p->destaque[0] = p->destaque[1] = -1;
     p->resultadoRodada = INDEFINIDO;
     p->duplaVencedoraMao = MAO_SEM_VENCEDOR;
@@ -157,6 +182,7 @@ static void comecar_mao(PartidaGui *p) {
     mao_iniciar(&p->mao, p->manilha, abre);
     p->duplaVencedoraMao = MAO_SEM_VENCEDOR;
     p->pontosDaMao = 0;
+    p->assentoPediu = p->assentoResponde = p->assentoCorreu = -1;
     comecar_rodada(p);
 }
 
@@ -225,6 +251,100 @@ static void encerrar_mao(PartidaGui *p) {
     mudar_estado(p, PARTIDA_FIM_MAO);
 }
 
+/* ----------------------------------------------------------------- truco */
+
+static void registrar_evento(PartidaGui *p, TipoEvento tipo, int assento, int valor) {
+    p->ultimoEvento.tipo = tipo;
+    p->ultimoEvento.assento = assento;
+    p->ultimoEvento.valor = valor;
+    p->contadorEventos++;
+}
+
+/* Quem pode pedir agora: na vez, quem joga; na resposta, quem responde. */
+static int assento_que_pediria(const PartidaGui *p) {
+    if (p->estado == PARTIDA_VEZ_DO_JOGADOR) return p->assentoDaVez;
+    if (p->estado == PARTIDA_RESPOSTA) return p->assentoResponde;
+    return -1;
+}
+
+int partida_pode_pedir(const PartidaGui *p, int *proximo) {
+    int assento = assento_que_pediria(p);
+    Mao copia;
+
+    if (proximo) *proximo = 0;
+    if (assento < 0) return 0;
+    /* A Mao nao tem ponteiros: a copia e independente e o modulo decide
+       sozinho (valor maximo, mesma dupla duas vezes, quem pode aumentar). */
+    copia = p->mao;
+    if (!mao_pedir(&copia, assento % 2)) return 0;
+    if (proximo) *proximo = copia.aposta.pedido;
+    return 1;
+}
+
+void partida_nome_do_valor(int valor, char *saida, int tamanho) {
+    const char *nome = NULL;
+    if (valor == 3) nome = "TRUCO";
+    if (valor == 6) nome = "SEIS";
+    if (valor == 9) nome = "NOVE";
+    if (valor == 12) nome = "DOZE";
+    if (nome) snprintf(saida, (size_t)tamanho, "%s", nome);
+    else snprintf(saida, (size_t)tamanho, "%d", valor);
+}
+
+/* O pedido saiu de "quem": no passa a vez responde o proximo na ordem de
+   jogo, que e sempre da outra dupla (CLAUDE.md). O main.c (235-246) deixa
+   a dupla escolher quem fala; aqui nao ha como perguntar sem mostrar as
+   cartas, entao a regra e fixa. Mesma regra quando quem responde aumenta. */
+static void anunciar_pedido(PartidaGui *p, int quem) {
+    p->assentoPediu = quem;
+    p->assentoResponde = (quem + 1) % NUM_JOGADORES;
+    mudar_estado(p, PARTIDA_ANUNCIO_PEDIDO);
+}
+
+int partida_pedir_truco(PartidaGui *p) {
+    int assento = p->assentoDaVez;
+
+    if (p->estado != PARTIDA_VEZ_DO_JOGADOR || p->tempoNoEstado < PARTIDA_TEMPO_TRAVA) return 0;
+    /* main.c 318: o modulo recusa pedido fora da regra; nao e falha. */
+    if (!mao_pedir(&p->mao, assento % 2)) return 0;
+    registrar_evento(p, EVENTO_PEDIU, assento, p->mao.aposta.pedido);
+    anunciar_pedido(p, assento);
+    return 1;
+}
+
+int partida_responder(PartidaGui *p, RespostaTruco resposta) {
+    int assento = p->assentoResponde;
+    int dupla = assento % 2;
+
+    if (p->estado != PARTIDA_RESPOSTA || p->tempoNoEstado < PARTIDA_TEMPO_TRAVA) return 0;
+
+    switch (resposta) {
+    case RESPOSTA_ACEITAR:
+        /* main.c 263-268: a mao passa a valer o pedido e a vez volta para
+           quem estava jogando, que ainda nao jogou a carta (main.c 386-404). */
+        if (!mao_aceitar(&p->mao, dupla)) return 0;
+        registrar_evento(p, EVENTO_ACEITOU, assento, p->mao.aposta.valor);
+        mudar_estado(p, PARTIDA_COBERTURA);
+        return 1;
+    case RESPOSTA_AUMENTAR:
+        /* main.c 270-281: o aumento confirma o pedido anterior (aposta.c
+           39-40) e agora a outra dupla responde. */
+        if (!mao_pedir(&p->mao, dupla)) return 0;
+        registrar_evento(p, EVENTO_AUMENTOU, assento, p->mao.aposta.pedido);
+        anunciar_pedido(p, assento);
+        return 1;
+    case RESPOSTA_CORRER:
+        /* main.c 284-290 e 403: a mao acaba na hora; a dupla que pediu leva
+           o valor confirmado antes do pedido recusado (aposta.c 67-68). */
+        if (!mao_correr(&p->mao, dupla)) return 0;
+        registrar_evento(p, EVENTO_CORREU, assento, p->mao.pontos_ganhos);
+        p->assentoCorreu = assento;
+        encerrar_mao(p);
+        return 1;
+    }
+    return 0;
+}
+
 /* ------------------------------------------------------ entradas da tela */
 
 int partida_jogar_carta(PartidaGui *p, int pos) {
@@ -263,6 +383,9 @@ int partida_confirmar(PartidaGui *p) {
     case PARTIDA_COBERTURA:
         mudar_estado(p, PARTIDA_VEZ_DO_JOGADOR);
         return 1;
+    case PARTIDA_COBERTURA_RESPOSTA:
+        mudar_estado(p, PARTIDA_RESPOSTA);
+        return 1;
     case PARTIDA_FIM_MAO:
         /* main.c 509-510: a partida acaba quando uma dupla chega a 12. */
         if (p->mesa.pontosDupla1 >= PONTOS_PARA_VENCER || p->mesa.pontosDupla2 >= PONTOS_PARA_VENCER) {
@@ -276,8 +399,9 @@ int partida_confirmar(PartidaGui *p) {
         partida_iniciar(p);
         return 1;
     default:
-        /* VEZ_DO_JOGADOR espera uma carta, nao um clique solto;
-           CARTA_VOANDO e APURANDO ignoram de proposito. */
+        /* VEZ_DO_JOGADOR espera uma carta e RESPOSTA um botao, nao um
+           clique solto; CARTA_VOANDO, APURANDO e ANUNCIO_PEDIDO ignoram
+           de proposito. */
         return 0;
     }
 }
@@ -296,6 +420,9 @@ void partida_atualizar(PartidaGui *p, float dt) {
         /* main.c 369: a rodada segue ate as 4 cartas estarem na mesa. */
         if (rodada_completa(&p->mao.rodadas[p->mao.rodada_atual])) apurar(p);
         else chamar_proximo(p);
+        break;
+    case PARTIDA_ANUNCIO_PEDIDO:
+        if (p->tempoNoEstado >= PARTIDA_TEMPO_ANUNCIO) mudar_estado(p, PARTIDA_COBERTURA_RESPOSTA);
         break;
     case PARTIDA_APURANDO:
         if (p->tempoNoEstado < PARTIDA_TEMPO_APURACAO) break;
@@ -317,14 +444,20 @@ void partida_atualizar(PartidaGui *p, float dt) {
 /* ------------------------------------------------------------ consultas */
 
 int partida_assento_visto(const PartidaGui *p) {
-    /* assentoDaVez so muda quando o proximo e chamado: em APURANDO e nas
-       telas de fim a camera fica com o ultimo que jogou. */
+    /* No anuncio a camera e de quem pediu; na cobertura da resposta e na
+       resposta, de quem responde. Fora do truco, assentoDaVez so muda
+       quando o proximo e chamado: em APURANDO e nas telas de fim a camera
+       fica com o ultimo que jogou. */
+    if (p->estado == PARTIDA_ANUNCIO_PEDIDO) return p->assentoPediu;
+    if (p->estado == PARTIDA_COBERTURA_RESPOSTA || p->estado == PARTIDA_RESPOSTA) return p->assentoResponde;
     return p->assentoDaVez;
 }
 
 int partida_mao_visivel(const PartidaGui *p) {
-    /* Privacidade: so quem esta na vez ve a propria mao. Na cobertura, na
-       apuracao e nas telas de fim todos olham a tela, entao ninguem ve. */
+    /* Privacidade: so quem esta na vez ve a propria mao, e quem responde ao
+       truco ve a dele para decidir. No anuncio, nas coberturas, na apuracao
+       e nas telas de fim todos olham a tela, entao ninguem ve. */
     if (p->estado == PARTIDA_VEZ_DO_JOGADOR || p->estado == PARTIDA_CARTA_VOANDO) return p->assentoDaVez;
+    if (p->estado == PARTIDA_RESPOSTA) return p->assentoResponde;
     return -1;
 }
