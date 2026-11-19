@@ -7,6 +7,7 @@
 #   make run        -> compila e abre o jogo grafico
 #                      (PROVISORIO: ARGS='--placar 11 11' comeca com 11 x 11)
 #   make teste      -> compila e roda os testes automaticos (sem raylib)
+#   make teste3d    -> EXPERIMENTO: personagens 3D na cena (output/teste_3d)
 #   make clean      -> apaga os executaveis
 #
 # Windows: rode no shell do MSYS2 ou do w64devkit (precisa de sh e mkdir -p).
@@ -60,7 +61,7 @@ TESTE    = $(OUT_DIR)/teste_partida$(EXE)
 # roda em qualquer maquina, sem janela e sem a raylib instalada.
 TESTE_SRC = testes/teste_partida.c partida_gui.c
 
-.PHONY: all gui terminal run teste clean
+.PHONY: all gui terminal run teste teste3d clean
 
 all: gui
 
@@ -92,5 +93,17 @@ $(TESTE): $(MODULOS) $(TESTE_SRC) $(CABECALHOS) | $(OUT_DIR)
 teste: $(TESTE)
 	$(TESTE)
 
+# EXPERIMENTO (branch experimento/personagens-3d): programa separado, fora
+# do GUI_SRC (o wildcard nao pega subpastas). Inclui cena.c dentro dele para
+# usar as camadas static, entao cena.c e main_gui.c ficam fora da lista.
+TESTE3D     = $(OUT_DIR)/teste_3d$(EXE)
+TESTE3D_SRC = experimentos/teste_3d.c $(filter-out main_gui.c cena.c,$(GUI_SRC))
+
+$(TESTE3D): $(MODULOS) $(TESTE3D_SRC) $(CABECALHOS) cena.c | $(OUT_DIR)
+	$(CC) $(CFLAGS) -I. -I$(SRC_DIR) -I$(RAYLIB_INC) $(MODULOS) $(TESTE3D_SRC) -L$(RAYLIB_LIB) $(LDLIBS) -o $@
+
+teste3d: $(TESTE3D)
+	$(TESTE3D)
+
 clean:
-	rm -f $(TERMINAL) $(GRAFICO) $(TESTE)
+	rm -f $(TERMINAL) $(GRAFICO) $(TESTE) $(TESTE3D)
