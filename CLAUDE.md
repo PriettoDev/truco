@@ -101,6 +101,16 @@ A apresentação será provavelmente em Windows; o desenvolvimento é em macOS.
   - O botão de pedir pergunta ao módulo (mao_pedir numa cópia da Mao), sem
     repetir as regras do aposta.c. Rótulos: 3 TRUCO, 6 SEIS, 9 NOVE, 12 DOZE;
     fora da tabela, "PEDIR <valor>".
+  - Telas do truco: anúncio (1,2 s, ninguém vê mão), cobertura da resposta
+    e resposta (só quem responde vê a própria mão; só os botões respondem,
+    clique solto e ESPAÇO não). ACEITAR, PEDIR <próximo> e CORRER ficam na
+    coluna da direita (x 1580); por isso os versos da direita ficam em
+    x 1470. A conferência de sobreposição checa os botões e os leques.
+  - "VALE 1 → 3?" no HUD enquanto o pedido está pendente. A seta U+2192 não
+    existe nas fontes de título e de texto (conferir_fontes.py): vem da
+    fonte de naipes, e o trecho é desenhado em três pedaços.
+  - Eventos da partida (ultimoEvento + contadorEventos, que nunca volta a
+    zero) para animações, sons e VAR. Nada vai para o histórico ainda.
 
 ## Provisórios a remover antes da entrega
 - Atalho --placar: make -C gui run ARGS='--placar 11 11' começa a partida
