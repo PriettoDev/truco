@@ -61,6 +61,45 @@ void girarMesa(Ordem *o) {
     }
 }
 
+
+// quem esta na frente da fila (o "mao"), SEM remover. NULL se a fila esta vazia.
+// ini aponta para a posicao anterior a frente (a mesma ideia do removerMesa).
+Jogador *frenteMesa(Ordem *o) {
+    if (mesaVazia(o)) {
+        return NULL;
+    }
+    return o->posicoes[proximaPosicao(o->ini)];
+}
+
+// gira a fila ate o jogador do assento pedido ficar na frente (ideia do Lucas).
+// Devolve 1 se achou; 0 se o assento nao esta na fila (e a ordem volta como estava).
+int definirPrimeiroDaMao(Mesa *mesa, int assento) {
+    int n = tamanhoMesa(&mesa->ordem);
+    for (int i = 0; i < n; i++) {                 // no maximo uma volta completa
+        if (jogador_assento(frenteMesa(&mesa->ordem)) == assento) {
+            return 1;
+        }
+        girarMesa(&mesa->ordem);
+    }
+    return 0;
+}
+
+// a cada nova rodada abre o PROXIMO da roda em relacao a quem abriu a anterior (ideia do Lucas).
+// Na primeira vez abre quem estiver na frente. Devolve o assento de quem abre, ou -1 se der erro.
+int iniciarNovaRodada(Mesa *mesa) {
+    if (mesa == NULL || mesaVazia(&mesa->ordem)) {
+        return -1;
+    }
+    if (mesa->inicioDaRodada != -1) {
+        if (!definirPrimeiroDaMao(mesa, mesa->inicioDaRodada)) {   // volta a quem abriu a anterior...
+            return -1;
+        }
+        girarMesa(&mesa->ordem);                                   // ...e passa um passo
+    }
+    mesa->inicioDaRodada = jogador_assento(frenteMesa(&mesa->ordem));
+    return mesa->inicioDaRodada;
+}
+
 // mostra a ordem de jogo desta mao. Recebe a Mesa POR VALOR de proposito:
 // consome uma COPIA da ordem para percorrer, sem alterar a ordem real da mesa
 void imprimirOrdemDaMao(const Mesa *mesa) {

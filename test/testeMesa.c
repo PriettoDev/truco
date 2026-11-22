@@ -14,24 +14,24 @@ int main(void) {
         char nome[30];
         printf("\nNome do jogador %d: \n", i + 1);
         scanf("%29s", nome);
-        mesa.jogadores[i] = jogador_criar(nome, duplas[i]);
+        mesa.jogadores[i] = jogador_criar(nome, duplas[i], i);
     }
 
     inicializarMesa(&mesa.ordem);
     for (int i = 0; i < 4; i++) {
-        inserirMesa(&mesa.ordem, i);
+        inserirMesa(&mesa.ordem, &mesa.jogadores[i]);
     }
 
     printf("\nPrimeira mao:");
-    imprimirOrdemDaMao(mesa);
+    imprimirOrdemDaMao(&mesa);
 
     girarMesa(&mesa.ordem);
     printf("\nSegunda mao:");
-    imprimirOrdemDaMao(mesa);
+    imprimirOrdemDaMao(&mesa);
 
     girarMesa(&mesa.ordem);
     printf("\nTerceira mao:");
-    imprimirOrdemDaMao(mesa);
+    imprimirOrdemDaMao(&mesa);
 
     return 0;
 }
