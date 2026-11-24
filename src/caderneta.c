@@ -17,8 +17,8 @@
 #define file_fd(arquivo) _fileno(arquivo)
 #else
 #include <unistd.h>
-#define sync_file(fd) _commit(fd)
-#define file_fd(arquivo) _fileno(arquivo)
+#define sync_file(fd) fsync(fd)
+#define file_fd(arquivo) fileno(arquivo)
 #endif
 
 #define CADERNETA_LIMITE 10000u

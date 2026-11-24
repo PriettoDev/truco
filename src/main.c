@@ -11,6 +11,7 @@
 #include "baralho.h"
 #include "historico.h"
 #include "caderneta.h"
+#include "salvamento.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -376,7 +377,7 @@ static int jogarCarta(Jogador *jogador, Mao *mao, RegistroRodada *registro) {
 // Mostra quem ganhou a mao que acabou de ser apurada.
 static ResultadoFluxo realizarRodada(Mesa *mesa, Mao *mao, tp_listad *historico, Caderneta *caderneta) {
     const int numeroRodada = mao->rodada_atual + 1;
-    Ordem fila = mesa->ordem;     /* Remover da copia preserva a ordem real. */
+    Ordem fila = mesa->ordem;     // Remover da copia preserva a ordem real
     Jogador *jogador;
     Rodada *rodada = &mao->rodadas[mao->rodada_atual];
     RegistroRodada registro = criarRegistroRodada(mesa->numeroDaRodada, numeroRodada, mesa->vira, mao->aposta.valor);
@@ -451,6 +452,12 @@ static ResultadoFluxo realizarRodada(Mesa *mesa, Mao *mao, tp_listad *historico,
         puts("Erro ao salvar a rodada no VAR.");
         return JOGO_ERRO;
     }
+
+    if (!salvarPartida(ARQUIVO_PARTIDA, mesa, historico)) {
+        puts("Erro ao gravar o VAR da rodada no disco.");
+        return JOGO_ERRO;
+    }
+    puts("VAR da rodada salvo no disco.");
 
     if (!mao_terminou(mao)) {
         // O vencedor da rodada abre a proxima; no empate, quem abriu mantem.
@@ -537,6 +544,13 @@ static ResultadoFluxo jogarMao(Mesa *mesa, tp_listad *historico, Caderneta *cade
     }
     mostrarPlacar(mesa);
     mesa->numeroDaRodada++;
+    
+    if (!salvarPartida(ARQUIVO_PARTIDA, mesa, historico)) {
+        puts("Erro ao salvar o progresso da partida no disco.");
+        return JOGO_ERRO;
+    }
+    printf("Progresso da partida salvo. Dupla 1: %d | Dupla 2: %d\n",
+           mesa->pontosDupla1, mesa->pontosDupla2);
     return JOGO_OK;
 }
 
@@ -559,22 +573,45 @@ int main(void) {
 
     srand((unsigned) time(NULL));   // Aleatoriedade apenas no embaralhamento, no inicio de cada mao
 
-    historico = inicializarHistorico();
-    if (historico == NULL) {
-        puts("Sem memoria para inicializar o VAR.");
-        return 1;
-    }
-    historico->partidaEncerrada = 0;
-
     if (!caderneta_inicializar(&caderneta, "caderneta.txt")) {
         puts("Erro: caderneta.txt esta invalido ou nao pode ser lido.");
         return 1;
     }
 
-    if (!configurarMesa(&mesa, &caderneta)) {
-        puts("Nao foi possivel cadastrar a mesa (ou entrada encerrada).");
-        destruirHistorico(historico);
-        return 1;
+    if (salvamento_disponivel(ARQUIVO_PARTIDA)) {
+        int opcao;
+        puts("Foi encontrada uma partida salva em partida.sav.");
+        puts("  1 - Continuar a partida salva (inicio da ultima mao nao concluida)");
+        puts("  2 - Comecar uma partida nova");
+        if (!lerNumero("Opcao: ", 1, 2, &opcao)) {
+            caderneta_destruir(&caderneta);
+            return 1;
+        }
+        if (opcao == 1) {
+            if (!carregarPartida(ARQUIVO_PARTIDA, &mesa, &historico)) {
+                puts("Nao foi possivel ler a partida salva. O arquivo pode estar corrompido ou desatualizado.");
+                caderneta_destruir(&caderneta);
+                return 1;
+            }
+            puts("Partida carregada. Os jogadores, placar e VAR foram restaurados.");
+        }
+    }
+
+    if (historico == NULL) {
+        historico = inicializarHistorico();
+        if (historico == NULL) {
+            puts("Sem memoria para inicializar o VAR.");
+            caderneta_destruir(&caderneta);
+            return 1;
+        }
+        if (!configurarMesa(&mesa, &caderneta)) {
+            puts("Nao foi possivel cadastrar a mesa (ou entrada encerrada).");
+            destruirHistorico(historico);
+            caderneta_destruir(&caderneta);
+            return 1;
+        }
+        // A nova mesa não deve herdar um arquivo de uma partida anterior
+        remove(ARQUIVO_PARTIDA);
     }
     mostrarPlacar(&mesa);
 
@@ -593,6 +630,9 @@ int main(void) {
     } else {
         int vencedora = mesa.pontosDupla1 >= PONTOS_PARA_VENCER ? 1 : 2;
         finalizarPartidaHistorico(historico);
+        if (!salvarPartida(ARQUIVO_PARTIDA, &mesa, historico))
+            puts("Aviso: nao foi possivel atualizar no disco o estado de partida encerrada.");
+
         printf("\n========== FIM DA PARTIDA ==========\n");
         printf("A Dupla %d venceu o Truco no Bar do Pato!\n", vencedora);
         mostrarPlacar(&mesa);
