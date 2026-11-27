@@ -10,6 +10,7 @@
 #include "mao.h"
 #include "baralho.h"
 #include "historico.h"
+#include "professor.h" // comentarios do professor do bar
 
 #ifdef _WIN32
 #include <windows.h>
@@ -48,6 +49,8 @@ static int lerLinha(char *destino, size_t capacidade) {
             ch = getchar();
         } while (ch != '\n' && ch != EOF);
         puts("Entrada muito longa. Tente novamente.");
+        // comenta o evento sem alterar as regras do jogo
+        professor_comentar(PROF_INVALIDA);
         return -1;
     }
     return 1;
@@ -73,6 +76,8 @@ static int lerNumero(const char *mensagem, int minimo, int maximo, int *valor) {
         if (fim == linha || *fim != '\0' || errno == ERANGE || numero < minimo || numero > maximo || 
         numero > INT_MAX) {
             printf("Opcao invalida. Digite um numero de %d e %d.\n", minimo, maximo);
+            // comenta o evento sem alterar as regras do jogo
+            professor_comentar(PROF_INVALIDA);
             continue;
         }
         *valor = (int)numero;
@@ -266,11 +271,15 @@ static ResultadoFluxo resolverAposta(Mesa *mesa, Mao *mao, RegistroRodada *regis
                                  anterior, pedido, mesa)) return JOGO_ERRO;
             printf("%s aceitou! A mao vale %d ponto(s).\n",
                    mesa->jogadores[respondente].nome, mao->aposta.valor);
+                   // comenta o evento sem alterar as regras do jogo
+                   professor_comentar(PROF_ACEITE);
         } else if (acao == 2) {
             int novoPedido;
             TipoEventoAposta tipo;
             if (pedido == 12) {
                 puts("Nao e possivel aumentar alem de doze.");
+                // comenta o evento sem alterar as regras do jogo
+                professor_comentar(PROF_INVALIDA);
                 continue;
             }
             if (!mao_pedir(mao, dupla)) return JOGO_ERRO;
@@ -280,6 +289,8 @@ static ResultadoFluxo resolverAposta(Mesa *mesa, Mao *mao, RegistroRodada *regis
                                  pedido, novoPedido, mesa)) return JOGO_ERRO;
             printf("%s aumentou para %d!\n",
                    mesa->jogadores[respondente].nome, novoPedido);
+                   // comenta o evento sem alterar as regras do jogo
+                   professor_comentar(PROF_PEDIDO);
         // A contraproposta confirma o pedido anterior (3 ou 6).
         } else {
             if (!mao_correr(mao, dupla)) return JOGO_ERRO;
@@ -288,6 +299,8 @@ static ResultadoFluxo resolverAposta(Mesa *mesa, Mao *mao, RegistroRodada *regis
             printf("%s correu! Dupla %d ganha %d ponto(s).\n",
                    mesa->jogadores[respondente].nome,
                    mao->dupla_vencedora + 1, mao->pontos_ganhos);
+                   // comenta o evento sem alterar as regras do jogo
+                   professor_comentar(PROF_CORRIDA);
         }
     }
     return JOGO_OK;
@@ -298,6 +311,8 @@ static ResultadoFluxo solicitarTruco(Mesa *mesa, Mao *mao, RegistroRodada *regis
 
     if (mao->aposta.valor >= 12 || aposta_pendente(&mao->aposta)) {
         puts("Nao e possivel pedir truco neste momento.");
+        // comenta o evento sem alterar as regras do jogo
+        professor_comentar(PROF_INVALIDA);
         return JOGO_OK;
     }
 
@@ -311,12 +326,16 @@ static ResultadoFluxo solicitarTruco(Mesa *mesa, Mao *mao, RegistroRodada *regis
     dupla = indice % 2;
     if (dupla == mao->aposta.ultima_dupla_pediu) {
         puts("Essa dupla fez o ultimo pedido; agora e a vez da adversaria.");
+        // comenta o evento sem alterar as regras do jogo
+        professor_comentar(PROF_INVALIDA);
         return JOGO_OK;
     }
 
     anterior = mao->aposta.valor;
     if (!mao_pedir(mao, dupla)) {
         puts("Pedido invalido pelas regras de aposta.");
+        // comenta o evento sem alterar as regras do jogo
+        professor_comentar(PROF_INVALIDA);
         return JOGO_OK;
     }
     pedido = mao->aposta.pedido;
@@ -326,6 +345,8 @@ static ResultadoFluxo solicitarTruco(Mesa *mesa, Mao *mao, RegistroRodada *regis
 
     printf("\n%s (Dupla %d) pediu %s!\n", mesa->jogadores[indice].nome, dupla + 1,
            pedido == 3 ? "TRUCO" : pedido == 6 ? "SEIS" : "DOZE");
+           // comenta o evento sem alterar as regras do jogo
+           professor_comentar(PROF_PEDIDO);
 
     return resolverAposta(mesa, mao, registro);
 }
@@ -464,8 +485,12 @@ static ResultadoFluxo jogarMao(Mesa *mesa, tp_listad *historico) {
 
     if (mao.dupla_vencedora == MAO_EMPATE) {
         puts("\nMao empatada: nenhuma dupla pontuou.");
+        // comenta o evento sem alterar as regras do jogo
+        professor_comentar(PROF_EMPATE);
     } else {
         printf("\nFim da mao %d: Dupla %d ganhou %d ponto(s)!\n", mesa->numeroDaRodada, mao.dupla_vencedora + 1, mao.pontos_ganhos);
+        // comenta o evento sem alterar as regras do jogo
+        professor_comentar(PROF_MAO_VENCIDA);
     }
     somarPontos(mesa, &mao);
     mostrarPlacar(mesa);
@@ -505,6 +530,9 @@ int main(void) {
     }
     mostrarPlacar(&mesa);
 
+    // apresenta o professor depois do cadastro dos jogadores
+    professor_comentar(PROF_INICIO);
+
     // Joga rodadas ate uma dupla chegar em PONTOS_PARA_VENCER
     while (mesa.pontosDupla1 < PONTOS_PARA_VENCER &&
            mesa.pontosDupla2 < PONTOS_PARA_VENCER) {
@@ -522,6 +550,8 @@ int main(void) {
         finalizarPartidaHistorico(historico);
         printf("\n========== FIM DA PARTIDA ==========\n");
         printf("A Dupla %d venceu o Truco no Bar do Pato!\n", vencedora);
+        // comenta o evento sem alterar as regras do jogo
+        professor_comentar(PROF_FIM);
         mostrarPlacar(&mesa);
     }
 
