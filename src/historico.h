@@ -2,6 +2,7 @@
 #define HISTORICO_H
 
 #include "jogador.h"
+#include <stdio.h>
 
 #define VAR_MAX_JOGADAS 4
 #define VAR_MAX_EVENTOS 8
@@ -61,6 +62,11 @@ const tp_no *buscarRodadaHistorico(const tp_listad *lista, int mao, int rodada);
 void exibirHistorico(const tp_listad *lista, int ordem, const Jogador jogadores[4]);
 int finalizarPartidaHistorico(tp_listad *lista);
 tp_listad *destruirHistorico(tp_listad *lista);
+void descartarRegistrosDaMaoEmAndamento(tp_listad *lista, int proximaMao);
+
+//Persistência do VAR, os campos são escritos individualmente, evitando de gravar ponteiros
+int gravarHistorico(FILE *arquivo, const tp_listad *lista);
+tp_listad *lerHistorico(FILE *arquivo);
 
 //Registor da rodada [JOGADA E APOSTA]
 RegistroRodada criarRegistroRodada(int mao, int rodada, Carta vira, int valorMao);

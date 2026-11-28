@@ -10,6 +10,8 @@
 #include "mao.h"
 #include "baralho.h"
 #include "historico.h"
+#include "caderneta.h"
+#include "salvamento.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -108,8 +110,9 @@ static int nomesIguais(const char *a, const char *b) {
 /* ------------------------------------------------------------------ */
 
 // Cria a mesa, os 4 jogadores e coloca todos na lista circular.
-static int configurarMesa(Mesa *mesa) {
+static int configurarMesa(Mesa *mesa, Caderneta *caderneta) {
     char nome[128];
+
     inicializarMesa(&mesa->ordem);    // fila circular vazia
     mesa->numeroDaRodada = 1;
     mesa->inicioDaRodada = -1;
@@ -126,14 +129,17 @@ static int configurarMesa(Mesa *mesa) {
             int leitura;
             printf("Nome do Jogador %d (Dupla %d): ", i+1, i%2+1);
             fflush(stdout);
+
             leitura = lerLinha(nome, sizeof(nome));
             if (leitura == 0) return 0;
             if (leitura < 0) continue;
             removerEspacosDasPontas(nome);
+
             if (nome[0] == '\0' || strlen(nome) >= sizeof(mesa->jogadores[i].nome)) {
                 puts("Nome invalido: use de 1 a 29 caracteres.");
                 continue;
             }
+
             repetido = 0;
             for (int j = 0; j < i; j++) {
                 if (nomesIguais(nome, mesa->jogadores[j].nome)) repetido = 1;
@@ -144,6 +150,19 @@ static int configurarMesa(Mesa *mesa) {
             }
             break;
         }
+
+        if (caderneta_buscar(caderneta, nome) == NULL) {
+            int inserido = caderneta_adicionar(caderneta, nome);
+
+            if (inserido != 1) {
+                puts("Nao foi possivel cadastrar o fregues na caderneta.");
+                return 0;
+            }
+            puts("Novo fregues cadastrado com estatisticas zeradas.");
+        } else {
+            puts("Fregues reconhecido; estatisticas anteriores mantidas.");
+        }
+
         mesa->jogadores[i] = jogador_criar(nome, i % 2 + 1, i);
         if (!inserirMesa(&mesa->ordem, &mesa->jogadores[i])) {
             puts("Erro ao inserir jogador na fila circular.");
@@ -356,9 +375,9 @@ static int jogarCarta(Jogador *jogador, Mao *mao, RegistroRodada *registro) {
 }
 
 // Mostra quem ganhou a mao que acabou de ser apurada.
-static ResultadoFluxo realizarRodada(Mesa *mesa, Mao *mao, tp_listad *historico) {
+static ResultadoFluxo realizarRodada(Mesa *mesa, Mao *mao, tp_listad *historico, Caderneta *caderneta) {
     const int numeroRodada = mao->rodada_atual + 1;
-    Ordem fila = mesa->ordem;     /* Remover da copia preserva a ordem real. */
+    Ordem fila = mesa->ordem;     // Remover da copia preserva a ordem real
     Jogador *jogador;
     Rodada *rodada = &mao->rodadas[mao->rodada_atual];
     RegistroRodada registro = criarRegistroRodada(mesa->numeroDaRodada, numeroRodada, mesa->vira, mao->aposta.valor);
@@ -383,8 +402,9 @@ static ResultadoFluxo realizarRodada(Mesa *mesa, Mao *mao, tp_listad *historico)
             puts("  2 - Pedir truco / aumentar");
             puts("  3 - Consultar VAR das rodadas anteriores");
             puts("  4 - Mostrar placar");
+            puts("  5 - Listar caderneta em ordem alfabetica");
             puts("  0 - Encerrar a partida");
-            if (!lerNumero("Opcao: ", 0, 4, &opcao)) return JOGO_ERRO;
+            if (!lerNumero("Opcao: ", 0, 5, &opcao)) return JOGO_ERRO;
 
             if (opcao == 0) return JOGO_SAIR;
             if (opcao == 3) {
@@ -393,6 +413,10 @@ static ResultadoFluxo realizarRodada(Mesa *mesa, Mao *mao, tp_listad *historico)
             }
             if (opcao == 4) {
                 mostrarPlacar(mesa);
+                continue;
+            }
+            if (opcao == 5) {
+                caderneta_listar(caderneta);
                 continue;
             }
             if (opcao == 2) {
@@ -429,6 +453,12 @@ static ResultadoFluxo realizarRodada(Mesa *mesa, Mao *mao, tp_listad *historico)
         return JOGO_ERRO;
     }
 
+    if (!salvarPartida(ARQUIVO_PARTIDA, mesa, historico)) {
+        puts("Erro ao gravar o VAR da rodada no disco.");
+        return JOGO_ERRO;
+    }
+    puts("VAR da rodada salvo no disco.");
+
     if (!mao_terminou(mao)) {
         // O vencedor da rodada abre a proxima; no empate, quem abriu mantem.
         if (!definirPrimeiroDaMao(mesa, mao->jogador_abre)) return JOGO_ERRO;
@@ -444,7 +474,47 @@ static void somarPontos(Mesa *mesa, const Mao *mao) {
     if (*placar > PONTOS_PARA_VENCER) *placar = PONTOS_PARA_VENCER;
 }
 
-static ResultadoFluxo jogarMao(Mesa *mesa, tp_listad *historico) {
+static int registrarEstatisticasMao(Caderneta *caderneta, const Mesa *mesa, const tp_listad *historico, const Mao *mao) {
+    CadernetaDelta deltas[NUM_JOGADORES] = {{0}};
+    unsigned long long trucos[NUM_JOGADORES] = {0};
+    unsigned long long corridas[NUM_JOGADORES] = {0};
+
+    for (const tp_no *no = historico->ini; no != NULL; no = no->prox) {
+        const RegistroRodada *registro = &no->info;
+
+        if (registro->numeroMao != mesa->numeroDaRodada) {
+            continue;
+        }
+
+        for (int i = 0; i < registro->qtdEventos; i++) {
+            const EventoAposta *evento = &registro->eventos[i];
+            int jogador = evento->indiceJogador;
+
+            if (jogador < 0 || jogador >= NUM_JOGADORES) {
+                return 0;
+            }
+
+            if (evento->tipo == VAR_PEDIU_TRUCO ||
+                evento->tipo == VAR_PEDIU_SEIS ||
+                evento->tipo == VAR_PEDIU_DOZE) {
+                trucos[jogador]++;
+            } else if (evento->tipo == VAR_CORREU) {
+                corridas[jogador]++;
+            }
+        }
+    }
+
+    for (int i = 0; i < NUM_JOGADORES; i++) {
+        deltas[i].nome = mesa->jogadores[i].nome;
+        deltas[i].maos_ganhas = mao->dupla_vencedora == mesa->jogadores[i].dupla - 1 ? 1 : 0;
+        deltas[i].trucos_pedidos = trucos[i];
+        deltas[i].vezes_correu = corridas[i];
+    }
+
+    return caderneta_aplicar(caderneta, deltas, NUM_JOGADORES);
+}
+
+static ResultadoFluxo jogarMao(Mesa *mesa, tp_listad *historico, Caderneta *caderneta) {
     Mao mao;
     Valor manilha;
     int abre = iniciarNovaRodada(mesa);
@@ -458,7 +528,7 @@ static ResultadoFluxo jogarMao(Mesa *mesa, tp_listad *historico) {
     mao_iniciar(&mao, manilha, abre);
 
     while (!mao_terminou(&mao)) {
-        ResultadoFluxo resultado = realizarRodada(mesa, &mao, historico);
+        ResultadoFluxo resultado = realizarRodada(mesa, &mao, historico, caderneta);
         if (resultado != JOGO_OK) return resultado;
     }
 
@@ -468,8 +538,19 @@ static ResultadoFluxo jogarMao(Mesa *mesa, tp_listad *historico) {
         printf("\nFim da mao %d: Dupla %d ganhou %d ponto(s)!\n", mesa->numeroDaRodada, mao.dupla_vencedora + 1, mao.pontos_ganhos);
     }
     somarPontos(mesa, &mao);
+    if (!registrarEstatisticasMao(caderneta, mesa, historico, &mao)) {
+        puts("Erro ao gravar as estatisticas da mao na caderneta.");
+        return JOGO_ERRO;
+    }
     mostrarPlacar(mesa);
     mesa->numeroDaRodada++;
+    
+    if (!salvarPartida(ARQUIVO_PARTIDA, mesa, historico)) {
+        puts("Erro ao salvar o progresso da partida no disco.");
+        return JOGO_ERRO;
+    }
+    printf("Progresso da partida salvo. Dupla 1: %d | Dupla 2: %d\n",
+           mesa->pontosDupla1, mesa->pontosDupla2);
     return JOGO_OK;
 }
 
@@ -480,6 +561,7 @@ static ResultadoFluxo jogarMao(Mesa *mesa, tp_listad *historico) {
 int main(void) {
     Mesa mesa;
     tp_listad *historico;
+    Caderneta caderneta;
     ResultadoFluxo status = JOGO_OK;
     int codigoSaida = 0;
     int consultar;
@@ -491,24 +573,52 @@ int main(void) {
 
     srand((unsigned) time(NULL));   // Aleatoriedade apenas no embaralhamento, no inicio de cada mao
 
-    historico = inicializarHistorico();
-    if (historico == NULL) {
-        puts("Sem memoria para inicializar o VAR.");
+    if (!caderneta_inicializar(&caderneta, "caderneta.txt")) {
+        puts("Erro: caderneta.txt esta invalido ou nao pode ser lido.");
         return 1;
     }
-    historico->partidaEncerrada = 0;
 
-    if (!configurarMesa(&mesa)) {
-        puts("Nao foi possivel cadastrar a mesa (ou entrada encerrada).");
-        destruirHistorico(historico);
-        return 1;
+    if (salvamento_disponivel(ARQUIVO_PARTIDA)) {
+        int opcao;
+        puts("Foi encontrada uma partida salva em partida.sav.");
+        puts("  1 - Continuar a partida salva (inicio da ultima mao nao concluida)");
+        puts("  2 - Comecar uma partida nova");
+        if (!lerNumero("Opcao: ", 1, 2, &opcao)) {
+            caderneta_destruir(&caderneta);
+            return 1;
+        }
+        if (opcao == 1) {
+            if (!carregarPartida(ARQUIVO_PARTIDA, &mesa, &historico)) {
+                puts("Nao foi possivel ler a partida salva. O arquivo pode estar corrompido ou desatualizado.");
+                caderneta_destruir(&caderneta);
+                return 1;
+            }
+            puts("Partida carregada. Os jogadores, placar e VAR foram restaurados.");
+        }
+    }
+
+    if (historico == NULL) {
+        historico = inicializarHistorico();
+        if (historico == NULL) {
+            puts("Sem memoria para inicializar o VAR.");
+            caderneta_destruir(&caderneta);
+            return 1;
+        }
+        if (!configurarMesa(&mesa, &caderneta)) {
+            puts("Nao foi possivel cadastrar a mesa (ou entrada encerrada).");
+            destruirHistorico(historico);
+            caderneta_destruir(&caderneta);
+            return 1;
+        }
+        // A nova mesa não deve herdar um arquivo de uma partida anterior
+        remove(ARQUIVO_PARTIDA);
     }
     mostrarPlacar(&mesa);
 
     // Joga rodadas ate uma dupla chegar em PONTOS_PARA_VENCER
     while (mesa.pontosDupla1 < PONTOS_PARA_VENCER &&
            mesa.pontosDupla2 < PONTOS_PARA_VENCER) {
-        status = jogarMao(&mesa, historico);
+        status = jogarMao(&mesa, historico, &caderneta);
         if (status != JOGO_OK) break;
     }
 
@@ -520,9 +630,23 @@ int main(void) {
     } else {
         int vencedora = mesa.pontosDupla1 >= PONTOS_PARA_VENCER ? 1 : 2;
         finalizarPartidaHistorico(historico);
+        if (!salvarPartida(ARQUIVO_PARTIDA, &mesa, historico))
+            puts("Aviso: nao foi possivel atualizar no disco o estado de partida encerrada.");
+
         printf("\n========== FIM DA PARTIDA ==========\n");
         printf("A Dupla %d venceu o Truco no Bar do Pato!\n", vencedora);
         mostrarPlacar(&mesa);
+
+        CadernetaDelta deltas[NUM_JOGADORES] = {{0}};
+
+        for (int i = 0; i < NUM_JOGADORES; i++) {
+            deltas[i].nome = mesa.jogadores[i].nome;
+            deltas[i].partidas_jogadas = 1;
+        }
+
+        if (!caderneta_aplicar(&caderneta, deltas, NUM_JOGADORES)) {
+            puts("Erro ao salvar o total de partidas na caderneta.");
+        }
     }
 
     printf("O VAR registrou %d rodada(s) nesta partida.\n", historico->tamanho);
@@ -532,6 +656,8 @@ int main(void) {
             consultarVar(historico, mesa.jogadores);
         }
     }
+
     historico = destruirHistorico(historico);
+    caderneta_destruir(&caderneta);
     return codigoSaida;
 }
